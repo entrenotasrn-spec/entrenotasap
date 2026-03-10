@@ -899,71 +899,57 @@ function api(fnName) {
   });
 }
 
-// Compatibilidade: google.script.run -> api()
+// Compatibilidade: google.script.run -> fetch()
+// Suporta qualquer ordem: .withSuccessHandler().withFailureHandler().fn_xxx()
+//                      ou: .withFailureHandler().withSuccessHandler().fn_xxx()
+//                      ou: .fn_xxx() direto
+function _makeRunner() {
+  var _s = null, _f = function(e){ console.error('API error:', e); };
+
+  function _exec(fnName, args) {
+    fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fn: fnName, args: args })
+    })
+    .then(function(res){ return res.json(); })
+    .then(function(data){ if(_s) _s(data); })
+    .catch(function(err){ if(_f) _f(err); });
+  }
+
+  var runner = {
+    withSuccessHandler: function(fn) { _s = fn; return runner; },
+    withFailureHandler: function(fn) { _f = fn; return runner; }
+  };
+
+  return new Proxy(runner, {
+    get: function(t, p) {
+      if (p in t) return t[p];
+      if (typeof p === 'string') {
+        return function() {
+          _exec(p, Array.prototype.slice.call(arguments));
+        };
+      }
+    }
+  });
+}
+
 var google = {
   script: {
     run: new Proxy({}, {
       get: function(target, prop) {
-        if (prop === 'withSuccessHandler') {
+        if (typeof prop !== 'string') return undefined;
+        // .withSuccessHandler(fn) ou .withFailureHandler(fn) -- retorna runner
+        if (prop === 'withSuccessHandler' || prop === 'withFailureHandler') {
           return function(fn) {
-            var runner = { _success: fn, _failure: function(e){ console.error(e); } };
-            runner.withFailureHandler = function(fn2) { runner._failure = fn2; return runner; };
-            // Proxy para capturar .fn_xxx(args...)
-            return new Proxy(runner, {
-              get: function(t, p) {
-                if (p in t) return t[p];
-                if (typeof p === 'string') {
-                  return function() {
-                    var a = Array.prototype.slice.call(arguments);
-                    fetch(API_URL, {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ fn: p, args: a })
-                    })
-                    .then(function(res){ return res.json(); })
-                    .then(function(data){ if(t._success) t._success(data); })
-                    .catch(function(err){ if(t._failure) t._failure(err); });
-                  };
-                }
-              }
-            });
+            var r = _makeRunner();
+            return r[prop](fn);
           };
         }
-        if (prop === 'withFailureHandler') {
-          return function(fn) {
-            var runner = { _success: function(){}, _failure: fn };
-            runner.withSuccessHandler = function(fn2) { runner._success = fn2; return runner; };
-            return new Proxy(runner, {
-              get: function(t, p) {
-                if (p in t) return t[p];
-                if (typeof p === 'string') {
-                  return function() {
-                    var a = Array.prototype.slice.call(arguments);
-                    fetch(API_URL, {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ fn: p, args: a })
-                    })
-                    .then(function(res){ return res.json(); })
-                    .then(function(data){ if(t._success) t._success(data); })
-                    .catch(function(err){ if(t._failure) t._failure(err); });
-                  };
-                }
-              }
-            });
-          };
-        }
-        // Chamada direta sem handlers: google.script.run.fn_xxx(...)
-        if (typeof prop === 'string') {
-          return function() {
-            var a = Array.prototype.slice.call(arguments);
-            fetch(API_URL, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ fn: prop, args: a })
-            }).catch(function(e){ console.error(e); });
-          };
-        }
+        // .fn_xxx(...) direto sem handlers
+        return function() {
+          _makeRunner()[prop].apply(null, arguments);
+        };
       }
     })
   }
