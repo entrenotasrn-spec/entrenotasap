@@ -916,12 +916,10 @@ function _makeRunner() {
     .catch(function(err){ if(_f) _f(err); });
   }
 
-  var runner = {
+  var runner = new Proxy({
     withSuccessHandler: function(fn) { _s = fn; return runner; },
     withFailureHandler: function(fn) { _f = fn; return runner; }
-  };
-
-  return new Proxy(runner, {
+  }, {
     get: function(t, p) {
       if (p in t) return t[p];
       if (typeof p === 'string') {
@@ -931,6 +929,8 @@ function _makeRunner() {
       }
     }
   });
+
+  return runner;
 }
 
 var google = {
