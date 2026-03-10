@@ -866,7 +866,7 @@ function api(fnName) {
   function doFetch() {
     fetch(API_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({ fn: fnName, args: args })
     })
     .then(function(res) {
@@ -908,7 +908,7 @@ function _makeRunner() {
   function _exec(fnName, args) {
     fetch(API_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({ fn: fnName, args: args })
     })
     .then(function(res){ return res.json(); })
