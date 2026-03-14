@@ -2243,6 +2243,13 @@ function renderIC(){
     '<input type="number" value="'+it.vl+'" placeholder="R$ Unit" step="0.01" onchange="itensC['+i+'].vl=+this.value;calcTC()">'+
     '<input type="number" value="'+it.desc+'" placeholder="Desc" step="0.01" onchange="itensC['+i+'].desc=+this.value;calcTC()">'+
     '<button class="btn-rm" onclick="itensC.splice('+i+',1);renderIC()">&#x2715;</button></div>');}).join('');
+  // Restaurar produto selecionado em cada linha
+  itensC.forEach(function(it, i) {
+    var rows = document.getElementById('compra-itens').children;
+    if (!rows[i]) return;
+    var sel = rows[i].querySelector('select');
+    if (sel && it.id) sel.value = it.id;
+  });
   calcTC();
 }
 
