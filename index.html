@@ -1398,6 +1398,13 @@ function iniciarApp() {
 function _aposLogin() {
   if (S.tipo === 'admin' || S.tipo === 'user') {
     _carregarConfiguracoes();
+    // Carregar unidades logo no início para popular todos os selects
+    google.script.run.withSuccessHandler(function(r) {
+      if (r && r.ok) {
+        _unidades = r.dados || [];
+        _preencherSelectsUnidade();
+      }
+    }).fn_listarUnidades(S.token);
     buildSidebar(); tela('dashboard'); nav('home');
   } else {
     // cliente -- fica no catalogo logado
