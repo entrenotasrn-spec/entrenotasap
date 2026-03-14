@@ -5108,7 +5108,7 @@ function _renderGaleriaDetalhe(p) {
     return '<div class="det-slide" style="flex-shrink:0;width:100%;display:flex;align-items:center;justify-content:center;background:#111;">' +
       '<img src="' + f.url + '" alt="' + (f.legenda||'') + '" ' +
         'style="max-width:100%;max-height:420px;object-fit:contain;display:block;" ' +
-        'onerror="this.parentElement.innerHTML='<div style=&quot;font-size:60px;padding:40px;color:#fff&quot;>&#x1F338;</div>'">' +
+        'onerror="this.style.display=\'none\'">' +
     '</div>';
   }).join('');
 
@@ -5137,7 +5137,7 @@ function _renderGaleriaDetalhe(p) {
       thumbsBar.innerHTML = todasFotos.map(function(f, i) {
         return '<img src="' + f.url + '" class="det-thumb' + (i === 0 ? ' ativa' : '') + '" ' +
           'onclick="_detIrParaFoto(' + i + ')" alt="' + (f.legenda||'') + '" ' +
-          'onerror="this.style.display='none'">';
+          'onerror="this.style.display=\'none\'">';
       }).join('');
     } else {
       thumbsBar.style.display = 'none';
