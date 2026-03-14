@@ -3935,10 +3935,11 @@ function carregarClientes(){
     if(!r.ok) return;
     if(!r.dados.length){document.getElementById('tbl-clientes').innerHTML='<div class="empty-txt">Nenhum cliente</div>';return;}
     document.getElementById('tbl-clientes').innerHTML=
-      '<table><thead><tr><th>Nome</th><th>Telefone</th><th>E-mail</th><th>Aniversario</th><th>Obs.</th><th>Cadastrado em</th></tr></thead><tbody>'+
+      '<table><thead><tr><th>Nome</th><th>Telefone</th><th>E-mail</th><th>Aniversario</th><th>Obs.</th><th>Cadastrado em</th><th>Acoes</th></tr></thead><tbody>'+
       r.dados.map(function(c){
         var nasc='-'; if(c.data_nascimento){ var _dn=String(c.data_nascimento).trim(); var _dm=_dn.match(/^(\d{2})\/(\d{2})\/(\d{4})$/); var _yd=_dn.match(/^(\d{4})-(\d{2})-(\d{2})/); if(_dm){nasc=_dm[1]+'/'+_dm[2];}else if(_yd){nasc=_yd[3]+'/'+_yd[2];}else{var _dd=new Date(_dn);if(!isNaN(_dd))nasc=_dd.toLocaleDateString('pt-BR');} }
-        return '<tr><td><strong>'+c.nome+'</strong></td><td>'+(c.telefone||'-')+'</td><td>'+(c.email||'-')+'</td><td>'+nasc+'</td><td>'+(c.observacoes||'-')+'</td><td>'+(c.data_cadastro?new Date(c.data_cadastro).toLocaleDateString('pt-BR'):'-')+'</td></tr>';
+        return '<tr><td><strong>'+c.nome+'</strong></td><td>'+(c.telefone||'-')+'</td><td>'+(c.email||'-')+'</td><td>'+nasc+'</td><td>'+(c.observacoes||'-')+'</td><td>'+(c.data_cadastro?new Date(c.data_cadastro).toLocaleDateString('pt-BR'):'-')+'</td>'+
+          '<td><button class="btn bw btn-sm" onclick="abrirEditarCliente(\''+c.id+'\')">&#x270F;&#xFE0F; Editar</button></td></tr>';
       }).join('')+
       '</tbody></table>';
   }).withFailureHandler(function(){}).fn_listarClientes(S.token);
@@ -3963,6 +3964,61 @@ function criarCliente(re){
     })
     .withFailureHandler(function(e){msg('msg-cliente',e.message);if(re)re();})
     .fn_criarCliente(S.token,dados);
+}
+
+function abrirEditarCliente(id) {
+  google.script.run
+    .withSuccessHandler(function(r) {
+      if (!r.ok) { alert(r.mensagem); return; }
+      var c = r.dados;
+      // Formatar data para input date (YYYY-MM-DD)
+      var nascFormatado = '';
+      if (c.data_nascimento) {
+        var _dn = String(c.data_nascimento).trim();
+        var _dm = _dn.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+        var _yd = _dn.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (_dm) nascFormatado = _dm[3]+'-'+_dm[2]+'-'+_dm[1];
+        else if (_yd) nascFormatado = _yd[1]+'-'+_yd[2]+'-'+_yd[3];
+        else nascFormatado = _dn;
+      }
+      var html =
+        '<div style="display:grid;gap:14px">'+
+        '<div class="form-group"><label>Nome *</label><input id="ecl-nome" value="'+( c.nome||'').replace(/"/g,'&quot;')+'" style="width:100%"></div>'+
+        '<div class="form-group"><label>Telefone</label><input id="ecl-tel" value="'+(c.telefone||'')+'" style="width:100%"></div>'+
+        '<div class="form-group"><label>E-mail</label><input id="ecl-email" type="email" value="'+(c.email||'')+'" style="width:100%"></div>'+
+        '<div class="form-group"><label>Data de Nascimento</label><input id="ecl-nasc" type="date" value="'+nascFormatado+'" style="width:100%"></div>'+
+        '<div class="form-group"><label>Observa&#231;&#245;es</label><textarea id="ecl-obs" style="min-height:70px;width:100%">'+(c.observacoes||'')+'</textarea></div>'+
+        '<div style="display:flex;gap:10px;justify-content:flex-end">'+
+          '<button class="btn" style="background:#eee;color:#555" onclick="fecharModalGenerico()">Cancelar</button>'+
+          '<button class="btn bp" onclick="salvarEdicaoCliente(\''+id+'\')">&#x1F4BE; Salvar</button>'+
+        '</div>'+
+        '<div class="msg-area" id="msg-edit-cli"></div>'+
+        '</div>';
+      abrirModal('&#x270F;&#xFE0F; Editar Cliente: '+c.nome, html);
+    })
+    .withFailureHandler(function(e){ alert(e.message); })
+    .fn_buscarCliente(S.token, id);
+}
+
+function salvarEdicaoCliente(id) {
+  var dados = {
+    nome:            document.getElementById('ecl-nome').value.trim(),
+    telefone:        document.getElementById('ecl-tel').value.trim(),
+    email:           document.getElementById('ecl-email').value.trim(),
+    data_nascimento: document.getElementById('ecl-nasc').value,
+    observacoes:     document.getElementById('ecl-obs').value.trim()
+  };
+  if (!dados.nome) { msg('msg-edit-cli', 'Nome e obrigatorio'); return; }
+  msg('msg-edit-cli', '&#x23F3; Salvando...', '');
+  google.script.run
+    .withSuccessHandler(function(r) {
+      if (!r.ok) { msg('msg-edit-cli', '&#x274C; '+r.mensagem); return; }
+      msg('msg-edit-cli', '&#x2705; Atualizado!', 'ok');
+      carregarClientes();
+      setTimeout(fecharModalGenerico, 1200);
+    })
+    .withFailureHandler(function(e) { msg('msg-edit-cli', '&#x274C; '+e.message); })
+    .fn_atualizarCliente(S.token, id, dados);
 }
 
 // ================================================================
