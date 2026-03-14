@@ -2195,12 +2195,13 @@ function carregarEstoque(){
       if(elRes) elRes.innerHTML='<div class="empty-txt">Nenhum estoque encontrado.</div>';
     } else {
       if(elRes) elRes.innerHTML=
-        '<table><thead><tr><th>Unidade</th><th>Produto</th><th>Tipo</th><th>Qtd</th><th>Custo Medio</th><th>Preco Venda</th><th>Lotes</th></tr></thead><tbody>'+
+        '<table><thead><tr><th>Unidade</th><th>Produto</th><th>Tipo</th><th>Local</th><th>Qtd</th><th>Custo Medio</th><th>Preco Venda</th><th>Lotes</th></tr></thead><tbody>'+
         lista.map(function(e){
           return '<tr>' +
             '<td><span style="background:#e8f4fd;color:#0f3460;padding:2px 8px;border-radius:10px;font-size:12px;font-weight:600">' + (e.nome_unidade||'--') + '</span></td>' +
             '<td><strong>'+e.nome_produto+'</strong></td>' +
             '<td><span style="font-size:12px;color:#888">'+e.tipo_item+'</span></td>' +
+            '<td><span style="font-size:12px;color:#555">'+(e.local||'--')+'</span></td>' +
             '<td><strong style="font-size:15px">'+(e.tipo_item==='decant' ? (e.quantidade+'ml') : e.quantidade)+'</strong></td>' +
             '<td style="color:#e67e22">'+(e.tipo_item==='decant' ? '--' : R(e.custo_medio))+'</td>' +
             '<td style="color:#27ae60;font-weight:600">'+(e.tipo_item==='decant' ? '--' : R(e.preco_venda))+'</td>' +
