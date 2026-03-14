@@ -280,6 +280,26 @@
           <div class="form-group"><label>Preço de Venda *</label><input id="p-preco" type="number" step="0.01" placeholder="0,00"></div>
           <div class="form-group"><label>Fabricante</label><select id="p-fabricante"><option value="">Sem fabricante</option></select></div>
           <div class="form-group"><label>Categoria</label><select id="p-categoria"><option value="">Sem categoria</option></select></div>
+          <div class="form-group">
+            <label>Origem</label>
+            <select id="p-origem">
+              <option value="">Não informado</option>
+              <option value="Nacional">Nacional</option>
+              <option value="Importado">Importado</option>
+              <option value="Árabe">Árabe</option>
+              <option value="Europeu">Europeu</option>
+              <option value="Americano">Americano</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Gênero</label>
+            <select id="p-genero">
+              <option value="">Não informado</option>
+              <option value="Masculino">Masculino</option>
+              <option value="Feminino">Feminino</option>
+              <option value="Unissex">Unissex</option>
+            </select>
+          </div>
           <div class="form-group col-full">
             <label>Foto do Produto</label>
             <div id="foto-area" style="display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap">
@@ -785,6 +805,22 @@
         <select id="cat-filtro-cat" onchange="filtrarCatalogo()"
           style="padding:9px 14px;border:1.5px solid #ddd;border-radius:20px;font-size:14px;background:white;cursor:pointer;min-width:140px">
           <option value="">&#x1F4C2; Todas as categorias</option>
+        </select>
+        <select id="cat-filtro-origem" onchange="filtrarCatalogo()"
+          style="padding:9px 14px;border:1.5px solid #ddd;border-radius:20px;font-size:14px;background:white;cursor:pointer;min-width:130px">
+          <option value="">&#x1F30D; Todas as origens</option>
+          <option value="Nacional">Nacional</option>
+          <option value="Importado">Importado</option>
+          <option value="Árabe">Árabe</option>
+          <option value="Europeu">Europeu</option>
+          <option value="Americano">Americano</option>
+        </select>
+        <select id="cat-filtro-genero" onchange="filtrarCatalogo()"
+          style="padding:9px 14px;border:1.5px solid #ddd;border-radius:20px;font-size:14px;background:white;cursor:pointer;min-width:130px">
+          <option value="">&#x1F464; Todos os gêneros</option>
+          <option value="Masculino">Masculino</option>
+          <option value="Feminino">Feminino</option>
+          <option value="Unissex">Unissex</option>
         </select>
         <button onclick="limparFiltrosCatalogo()"
           style="padding:9px 14px;border:1.5px solid #ddd;border-radius:20px;font-size:13px;background:white;cursor:pointer;color:#888;white-space:nowrap">
@@ -1608,6 +1644,8 @@ function criarProduto(re) {
   var idFab = document.getElementById('p-fabricante') ? document.getElementById('p-fabricante').value : '';
   var idCat = document.getElementById('p-categoria')  ? document.getElementById('p-categoria').value  : '';
   var apres = document.getElementById('p-apresentacao') ? document.getElementById('p-apresentacao').value.trim() : '';
+  var orig  = document.getElementById('p-origem') ? document.getElementById('p-origem').value : '';
+  var gen   = document.getElementById('p-genero') ? document.getElementById('p-genero').value : '';
   if (!nome || !preco) { msg('msg-produto','Preencha nome e preco'); if(re)re(); return; }
 
   if (_fotoB64) {
@@ -1615,12 +1653,12 @@ function criarProduto(re) {
     google.script.run
       .withSuccessHandler(function(r) {
         if (!r.ok) { msg('msg-produto','&#x274C; Erro no upload: '+r.mensagem); if(re)re(); return; }
-        _salvarProduto(nome, preco, desc, r.dados.url, re, idFab, idCat, apres);
+        _salvarProduto(nome, preco, desc, r.dados.url, re, idFab, idCat, apres, orig, gen);
       })
       .withFailureHandler(function(e) { msg('msg-produto','&#x274C; Erro: '+e.message); if(re)re(); })
       .fn_salvarFotoBase64(S.token, _fotoB64, nome);
   } else {
-    _salvarProduto(nome, preco, desc, url, re, idFab, idCat, apres);
+    _salvarProduto(nome, preco, desc, url, re, idFab, idCat, apres, orig, gen);
   }
 }
 
@@ -1638,7 +1676,7 @@ function _carregarSelectsProduto() {
   }).fn_listarCategorias(S.token);
 }
 
-function _salvarProduto(nome, preco, desc, fotoUrl, re, idFab, idCat, apres) {
+function _salvarProduto(nome, preco, desc, fotoUrl, re, idFab, idCat, apres, orig, gen) {
   msg('msg-produto','&#x23F3; Salvando produto...','');
   google.script.run
     .withSuccessHandler(function(r) {
@@ -1648,12 +1686,14 @@ function _salvarProduto(nome, preco, desc, fotoUrl, re, idFab, idCat, apres) {
       document.getElementById('p-preco').value = '';
       document.getElementById('p-desc').value  = '';
       var apEl = document.getElementById('p-apresentacao'); if(apEl) apEl.value = '';
+      var orEl = document.getElementById('p-origem'); if(orEl) orEl.value = '';
+      var geEl = document.getElementById('p-genero'); if(geEl) geEl.value = '';
       limparFoto();
       carregarProdutos();
       if(re)re();
     })
     .withFailureHandler(function(e) { msg('msg-produto','&#x274C; '+e.message); if(re)re(); })
-    .fn_criarProduto(S.token, { nome:nome, preco_venda:preco, descricao:desc, foto_url:fotoUrl||'', id_fabricante:idFab, id_categoria:idCat, apresentacao:apres||'' });
+    .fn_criarProduto(S.token, { nome:nome, preco_venda:preco, descricao:desc, foto_url:fotoUrl||'', id_fabricante:idFab, id_categoria:idCat, apresentacao:apres||'', origem:orig||'', genero:gen||'' });
 }
 
 function carregarProdutos(){
@@ -1941,6 +1981,20 @@ function abrirEditarProduto(id) {
         }).join('')+
       '</select></div>'+
     '<div class="form-group"><label>Apresenta&#231;&#227;o</label><input id="edit-apresentacao" value="'+(p.apresentacao||'')+'" placeholder="Ex: Frasco 100ml, Frasco 50ml..." style="width:100%"></div>'+
+    '<div class="form-group"><label>Origem</label>'+
+      '<select id="edit-origem" style="width:100%">'+
+        '<option value="">N&#227;o informado</option>'+
+        ['Nacional','Importado','&#xC1;rabe','Europeu','Americano'].map(function(o){
+          return '<option value="'+o+'"'+(o===(p.origem||'')?' selected':'')+'>'+o+'</option>';
+        }).join('')+
+      '</select></div>'+
+    '<div class="form-group"><label>G&#234;nero</label>'+
+      '<select id="edit-genero" style="width:100%">'+
+        '<option value="">N&#227;o informado</option>'+
+        ['Masculino','Feminino','Unissex'].map(function(g){
+          return '<option value="'+g+'"'+(g===(p.genero||'')?' selected':'')+'>'+g+'</option>';
+        }).join('')+
+      '</select></div>'+
     '<div style="display:flex;gap:10px;justify-content:flex-end">'+
       '<button class="btn" style="background:#eee;color:#555" onclick="fecharModalGenerico()">Cancelar</button>'+
       '<button class="btn bp" onclick="salvarEdicaoProduto()">&#x1F4BE; Salvar</button>'+
@@ -1986,6 +2040,8 @@ function salvarEdicaoProduto(){
   var idFab = document.getElementById('edit-fabricante') ? document.getElementById('edit-fabricante').value : undefined;
   var idCat = document.getElementById('edit-categoria') ? document.getElementById('edit-categoria').value : undefined;
   var apres = document.getElementById('edit-apresentacao') ? document.getElementById('edit-apresentacao').value.trim() : undefined;
+  var orig  = document.getElementById('edit-origem') ? document.getElementById('edit-origem').value : undefined;
+  var gen   = document.getElementById('edit-genero') ? document.getElementById('edit-genero').value : undefined;
   function _doUpdate(fotoUrl){
     msg('msg-edit-prod','&#x23F3; Salvando...','');
     var campos = {nome:nome, preco_venda:preco, descricao:desc};
@@ -1993,6 +2049,8 @@ function salvarEdicaoProduto(){
     if(idFab!==undefined) campos.id_fabricante = idFab;
     if(idCat!==undefined) campos.id_categoria  = idCat;
     if(apres!==undefined) campos.apresentacao  = apres;
+    if(orig!==undefined)  campos.origem        = orig;
+    if(gen!==undefined)   campos.genero        = gen;
     google.script.run
       .withSuccessHandler(function(r){
         if(!r.ok){msg('msg-edit-prod','&#x274C; '+r.mensagem);return;}
@@ -4636,6 +4694,8 @@ function _renderCatalogo(lista) {
     var tagsHtml = '';
     if (p.nome_fabricante) tagsHtml += '<span class="cat-fab-badge">&#x1F3F7; '+p.nome_fabricante+'</span>';
     if (p.nome_categoria)  tagsHtml += '<span class="cat-cat-badge">&#x1F4C2; '+p.nome_categoria+'</span>';
+    if (p.origem)  tagsHtml += '<span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;background:#e8f5e9;color:#2e7d32;margin-right:4px;margin-bottom:4px">&#x1F30D; '+p.origem+'</span>';
+    if (p.genero)  tagsHtml += '<span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;background:#fce4ec;color:#c2185b;margin-right:4px;margin-bottom:4px">&#x1F464; '+p.genero+'</span>';
 
     return '<div class="prod-card">'+
       '<div class="prod-img">'+foto+'</div>'+
@@ -4690,9 +4750,11 @@ function _popularFiltrosCatalogo() {
 }
 
 function filtrarCatalogo() {
-  var busca = (document.getElementById('cat-busca')||{}).value || '';
-  var fabId = (document.getElementById('cat-filtro-fab')||{}).value || '';
-  var catId = (document.getElementById('cat-filtro-cat')||{}).value || '';
+  var busca  = (document.getElementById('cat-busca')||{}).value || '';
+  var fabId  = (document.getElementById('cat-filtro-fab')||{}).value || '';
+  var catId  = (document.getElementById('cat-filtro-cat')||{}).value || '';
+  var orig   = (document.getElementById('cat-filtro-origem')||{}).value || '';
+  var gen    = (document.getElementById('cat-filtro-genero')||{}).value || '';
   var buscaL = busca.toLowerCase().trim();
 
   var filtrados = _todosProds.filter(function(p) {
@@ -4702,7 +4764,9 @@ function filtrarCatalogo() {
                       (p.nome_categoria||'').toLowerCase().includes(buscaL);
     var matchFab    = !fabId || p.id_fabricante === fabId;
     var matchCat    = !catId || p.id_categoria  === catId;
-    return matchBusca && matchFab && matchCat;
+    var matchOrig   = !orig  || p.origem === orig;
+    var matchGen    = !gen   || p.genero === gen;
+    return matchBusca && matchFab && matchCat && matchOrig && matchGen;
   });
 
   var resEl = document.getElementById('cat-resultado');
@@ -4719,6 +4783,8 @@ function limparFiltrosCatalogo() {
   var b = document.getElementById('cat-busca'); if(b) b.value = '';
   var f = document.getElementById('cat-filtro-fab'); if(f) f.value = '';
   var c = document.getElementById('cat-filtro-cat'); if(c) c.value = '';
+  var o = document.getElementById('cat-filtro-origem'); if(o) o.value = '';
+  var g = document.getElementById('cat-filtro-genero'); if(g) g.value = '';
   var r = document.getElementById('cat-resultado'); if(r) r.textContent = '';
   _renderCatalogo(_todosProds);
 }
