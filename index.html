@@ -201,6 +201,29 @@
     .btn-finalizar { width: 100%; padding: 13px; background: #27ae60; color: white; border: none; border-radius: 9px; font-size: 15px; font-weight: 800; cursor: pointer; }
     .btn-limpar { background: none; border: none; color: #e74c3c; cursor: pointer; font-size: 12.5px; text-decoration: underline; margin-top: 8px; }
 
+
+    /* ===== TELA DETALHE PRODUTO ===== */
+    #tela-produto { display: none; background: #f8f4f0; min-height: 100vh; }
+    #tela-produto.ativa { display: block; }
+    .det-nav { background: linear-gradient(135deg, var(--sidebar-bg), var(--primary)); color: white; padding: 13px 22px; display: flex; align-items: center; gap: 14px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
+    .det-nav button { background: rgba(255,255,255,0.18); border: 1.5px solid rgba(255,255,255,0.5); color: white; padding: 7px 14px; border-radius: 20px; cursor: pointer; font-size: 13px; }
+    .det-galeria { position: relative; background: #1a1a2e; }
+    .det-foto-main-wrap { width: 100%; max-height: 420px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #111; }
+    .det-foto-main { max-width: 100%; max-height: 420px; object-fit: contain; display: block; }
+    .det-foto-main-placeholder { width: 100%; height: 320px; display: flex; align-items: center; justify-content: center; font-size: 80px; background: #f9f4f0; }
+    .det-thumbs { display: flex; gap: 8px; padding: 10px 16px; overflow-x: auto; background: rgba(0,0,0,0.4); }
+    .det-thumb { width: 64px; height: 64px; object-fit: cover; border-radius: 8px; cursor: pointer; border: 3px solid transparent; flex-shrink: 0; transition: border-color 0.15s; }
+    .det-thumb.ativa { border-color: white; }
+    .det-corpo { max-width: 700px; margin: 0 auto; padding: 22px 18px 40px; }
+    .det-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+    .det-nome { font-size: 24px; font-weight: 900; color: #1a1a2e; margin-bottom: 6px; line-height: 1.2; }
+    .det-desc { font-size: 14px; color: #666; margin-bottom: 16px; line-height: 1.6; }
+    .det-preco { font-size: 30px; font-weight: 900; color: var(--primary); margin-bottom: 18px; }
+    .det-acoes { display: flex; flex-direction: column; gap: 10px; margin-bottom: 22px; }
+    .det-social { display: flex; gap: 12px; align-items: center; padding: 14px 0; border-top: 1px solid #eee; border-bottom: 1px solid #eee; margin-bottom: 16px; }
+    .det-social-btn { display: flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 20px; border: 2px solid #ddd; background: white; cursor: pointer; font-size: 13px; font-weight: 700; transition: all 0.15s; }
+    .det-social-btn:hover { border-color: var(--primary); }
+    .det-social-btn.curtido { background: #fdecea; border-color: #e74c3c; color: #e74c3c; }
     /* ===== RESPONSIVO ===== */
     .hamburger { display: none; position: fixed; top: 14px; left: 14px; z-index: 200; background: var(--primary); color: white; border: none; padding: 8px 11px; border-radius: 7px; cursor: pointer; font-size: 19px; }
     @media (max-width: 768px) {
@@ -879,6 +902,41 @@
     <button class="modal-close" onclick="fecharModalGenerico()">✕</button>
     <h2 id="modal-gen-titulo">Detalhes</h2>
     <div id="modal-gen-corpo"></div>
+  </div>
+</div>
+
+<!-- TELA DETALHE DO PRODUTO -->
+<div id="tela-produto" class="tela">
+  <nav class="det-nav">
+    <button onclick="voltarCatalogo()">&#x2190; Voltar</button>
+    <span id="det-nome-nav" style="font-size:15px;font-weight:700;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+  </nav>
+  <!-- galeria de fotos -->
+  <div class="det-galeria">
+    <div class="det-foto-main-wrap" id="det-foto-main-wrap">
+      <div class="det-foto-main-placeholder" id="det-foto-placeholder">&#x1F338;</div>
+      <img id="det-foto-main" class="det-foto-main" style="display:none" src="" alt="">
+    </div>
+    <div class="det-thumbs" id="det-thumbs" style="display:none"></div>
+  </div>
+  <!-- corpo -->
+  <div class="det-corpo">
+    <div class="det-tags" id="det-tags"></div>
+    <div class="det-nome" id="det-nome"></div>
+    <div class="det-desc" id="det-desc"></div>
+    <div class="det-preco" id="det-preco" style="display:none"></div>
+    <!-- acoes de compra -->
+    <div class="det-acoes" id="det-acoes"></div>
+    <!-- curtir / compartilhar -->
+    <div class="det-social">
+      <button class="det-social-btn" id="btn-curtir" onclick="curtirProdutoUI()">
+        <span id="det-curtir-ico">&#x2764;&#xFE0F;</span> Curtir <span id="det-curtidas">0</span>
+      </button>
+      <button class="det-social-btn" id="btn-compartilhar" onclick="compartilharProdutoUI()">
+        &#x1F517; Compartilhar <span id="det-compartilhamentos">0</span>
+      </button>
+    </div>
+    <div id="det-msg" style="font-size:13px;color:#27ae60;min-height:18px;text-align:center"></div>
   </div>
 </div>
 
@@ -1719,6 +1777,7 @@ function carregarProdutos(){
           '<td><span class="cat-cat-badge">'+(p.nome_categoria||'--')+'</span></td>'+
           '<td>'+(p.ativo?'<span class="bdg bg">Ativo</span>':'<span class="bdg br">Inativo</span>')+'</td>'+
           '<td style="white-space:nowrap">'+
+            '<button class="btn bb btn-sm" onclick="abrirGerenciarFotos(\''+p.id+'\',\''+p.nome.replace(/\'/g,"\'")+'\')">&#x1F5BC; Fotos</button> '+
             '<button class="btn bw btn-sm" onclick="abrirEditarProduto(\''+p.id+'\')">&#x270F;&#xFE0F; Editar</button> '+
             '<button class="btn btn-sm '+(p.ativo?'bd':'bs')+'" onclick="toggleProd(\''+p.id+'\','+(+!p.ativo)+')">'+
             (p.ativo?'Desativar':'Ativar')+'</button>'+
@@ -4698,10 +4757,10 @@ function _renderCatalogo(lista) {
     if (p.genero)  tagsHtml += '<span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;background:#fce4ec;color:#c2185b;margin-right:4px;margin-bottom:4px">&#x1F464; '+p.genero+'</span>';
 
     return '<div class="prod-card">'+
-      '<div class="prod-img">'+foto+'</div>'+
+      '<div class="prod-img" onclick="abrirDetalheProduto(\''+p.id+'\')" style="cursor:pointer">'+foto+'</div>'+
       '<div class="prod-body">'+
         (tagsHtml ? '<div class="prod-tags">'+tagsHtml+'</div>' : '')+
-        '<div class="prod-nome">'+p.nome+'</div>'+
+        '<div class="prod-nome" onclick="abrirDetalheProduto(\''+p.id+'\')" style="cursor:pointer">'+p.nome+'</div>'+
         '<div class="prod-desc">'+(p.descricao||'')+'</div>'+
         (frascoAtivo ? '<div class="prod-preco">'+R(preco)+'</div>' : '')+
         btnFrasco+
@@ -4861,6 +4920,337 @@ function cancelarMeuPed(id){
   if(!confirm('Cancelar este pedido?')) return;
   google.script.run.withSuccessHandler(function(r){if(r.ok)carregarPedidosCli();else alert(r.mensagem);}).fn_cancelarPedidoPublico(S.token,id);
 }
+
+// ================================================================
+// TELA DE DETALHE DO PRODUTO
+// ================================================================
+var _detProdAtual = null;
+var _detFotosAtual = [];
+var _detFotoIdx = 0;
+var _detCurtido = false;
+
+function abrirDetalheProduto(id) {
+  tela('produto');
+  document.getElementById('det-nome-nav').textContent = '...';
+  document.getElementById('det-nome').textContent = '';
+  document.getElementById('det-desc').textContent = '';
+  document.getElementById('det-preco').style.display = 'none';
+  document.getElementById('det-acoes').innerHTML = '<div class="loading-txt">&#x23F3; Carregando...</div>';
+  document.getElementById('det-tags').innerHTML = '';
+  document.getElementById('det-curtidas').textContent = '0';
+  document.getElementById('det-compartilhamentos').textContent = '0';
+  document.getElementById('btn-curtir').classList.remove('curtido');
+  document.getElementById('det-msg').textContent = '';
+  _detCurtido = false;
+
+  google.script.run
+    .withSuccessHandler(function(r) {
+      if (!r || !r.ok) {
+        document.getElementById('det-acoes').innerHTML = '<div class="merr">Erro ao carregar produto</div>';
+        return;
+      }
+      _detProdAtual = r.dados;
+      _renderDetalheProduto(r.dados);
+    })
+    .withFailureHandler(function(e) {
+      document.getElementById('det-acoes').innerHTML = '<div class="merr">Erro: '+e.message+'</div>';
+    })
+    .fn_detalhesProdutoPublico(id);
+}
+
+function _renderDetalheProduto(p) {
+  // Atualizar URL para compartilhamento (hash)
+  try { history.replaceState(null, '', '#produto=' + p.id); } catch(e) {}
+
+  // Nome
+  document.getElementById('det-nome-nav').textContent = p.nome;
+  document.getElementById('det-nome').textContent = p.nome;
+  document.getElementById('det-desc').textContent = p.descricao || '';
+
+  // Tags
+  var tags = '';
+  if (p.nome_fabricante) tags += '<span class="cat-fab-badge">&#x1F3F7; '+p.nome_fabricante+'</span>';
+  if (p.nome_categoria)  tags += '<span class="cat-cat-badge">&#x1F4C2; '+p.nome_categoria+'</span>';
+  if (p.origem) tags += '<span style="padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;background:#e8f5e9;color:#2e7d32">&#x1F30D; '+p.origem+'</span>';
+  if (p.genero) tags += '<span style="padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;background:#fce4ec;color:#c2185b">&#x1F464; '+p.genero+'</span>';
+  document.getElementById('det-tags').innerHTML = tags;
+
+  // Preço
+  var prEl = document.getElementById('det-preco');
+  if (p.frasco_ativo !== false) {
+    prEl.textContent = R(p.preco_venda);
+    prEl.style.display = 'block';
+  } else {
+    prEl.style.display = 'none';
+  }
+
+  // Curtidas e compartilhamentos
+  document.getElementById('det-curtidas').textContent = p.curtidas || 0;
+  document.getElementById('det-compartilhamentos').textContent = p.compartilhamentos || 0;
+
+  // Galeria de fotos
+  _detFotosAtual = p.fotos || [];
+  _detFotoIdx = 0;
+  _renderGaleriaDetalhe(p);
+
+  // Botões de ação
+  var logado = !!S.token;
+  var html = '';
+
+  if (p.frasco_ativo !== false) {
+    var labelFrasco = p.apresentacao ? p.apresentacao + ' — ' + R(p.preco_venda) : 'Frasco — ' + R(p.preco_venda);
+    if (logado) {
+      html += '<button class="btn-add-cart" onclick="addCart(\''+p.id+'\',\''+p.nome.replace(/'/g,"&#39;")+'\','+p.preco_venda+',\'normal\',0);tela(\'catalogo\')">&#x1F6D2; '+labelFrasco+'</button>';
+    } else {
+      html += '<button class="btn-add-cart" style="background:#888" onclick="abrirModalAuth(\'entrar\')">&#x1F511; Entre para pedir</button>';
+    }
+  }
+
+  if (p.decanters && p.decanters.length) {
+    p.decanters.forEach(function(d) {
+      var label = '&#x1F4A7; '+d.ml+'ml — '+R(d.preco);
+      if (logado) {
+        html += '<button class="btn-add-cart" style="background:linear-gradient(135deg,#27ae60,#1e8449)" onclick="addCart(\''+p.id+'\',\''+p.nome.replace(/'/g,"&#39;")+' ('+d.ml+'ml)\','+d.preco+',\'decant\','+d.ml+');tela(\'catalogo\')">'+label+'</button>';
+      } else {
+        html += '<button class="btn-add-cart" style="background:#888" onclick="abrirModalAuth(\'entrar\')">'+label+'</button>';
+      }
+    });
+  }
+
+  if (!html) {
+    html = '<div style="background:#fef9e7;border:1px solid #f0c040;border-radius:10px;padding:12px;text-align:center;color:#856404;font-size:13px">&#x1F6AB; Este produto não está disponível para venda no momento</div>';
+  }
+
+  document.getElementById('det-acoes').innerHTML = html;
+}
+
+function _renderGaleriaDetalhe(p) {
+  var mainWrap = document.getElementById('det-foto-main-wrap');
+  var mainImg  = document.getElementById('det-foto-main');
+  var placeholder = document.getElementById('det-foto-placeholder');
+  var thumbsEl = document.getElementById('det-thumbs');
+
+  // Foto principal: prioriza primeira da galeria, depois foto_url
+  var todasFotos = [];
+  if (_detFotosAtual.length) {
+    _detFotosAtual.forEach(function(f) { todasFotos.push({ url: f.url, legenda: f.legenda }); });
+  } else if (p.foto_url) {
+    todasFotos.push({ url: p.foto_url, legenda: p.nome });
+  }
+
+  if (todasFotos.length) {
+    placeholder.style.display = 'none';
+    mainImg.style.display = 'block';
+    mainImg.src = todasFotos[0].url;
+    mainImg.alt = todasFotos[0].legenda || p.nome;
+  } else {
+    placeholder.style.display = 'flex';
+    placeholder.textContent = '🌸';
+    mainImg.style.display = 'none';
+  }
+
+  // Thumbnails (só se tiver mais de 1)
+  if (todasFotos.length > 1) {
+    thumbsEl.style.display = 'flex';
+    thumbsEl.innerHTML = todasFotos.map(function(f, i) {
+      return '<img src="'+f.url+'" class="det-thumb'+(i===0?' ativa':'')+'" onclick="_detSelecionarFoto('+i+',this)" alt="'+(f.legenda||'')+'">';
+    }).join('');
+  } else {
+    thumbsEl.style.display = 'none';
+  }
+
+  // Guardar fotos para navegação
+  _detFotosAtual = todasFotos;
+}
+
+function _detSelecionarFoto(idx, thumbEl) {
+  _detFotoIdx = idx;
+  var mainImg = document.getElementById('det-foto-main');
+  mainImg.src = _detFotosAtual[idx].url;
+  mainImg.alt = _detFotosAtual[idx].legenda || '';
+  // Atualizar thumb ativa
+  document.querySelectorAll('.det-thumb').forEach(function(t) { t.classList.remove('ativa'); });
+  if (thumbEl) thumbEl.classList.add('ativa');
+}
+
+function curtirProdutoUI() {
+  if (_detCurtido) return;
+  if (!_detProdAtual) return;
+  _detCurtido = true;
+  document.getElementById('btn-curtir').classList.add('curtido');
+  google.script.run
+    .withSuccessHandler(function(r) {
+      if (r && r.ok) {
+        document.getElementById('det-curtidas').textContent = r.dados.curtidas;
+      }
+    })
+    .fn_curtirProduto(_detProdAtual.id);
+}
+
+function compartilharProdutoUI() {
+  if (!_detProdAtual) return;
+  var url = window.location.origin + window.location.pathname + '#produto=' + _detProdAtual.id;
+  // Tentar usar Web Share API (mobile)
+  if (navigator.share) {
+    navigator.share({ title: _detProdAtual.nome, text: _detProdAtual.descricao || '', url: url })
+      .then(function() {
+        _registrarCompartilhamento();
+      })
+      .catch(function() {});
+  } else {
+    // Fallback: copiar link
+    try {
+      navigator.clipboard.writeText(url).then(function() {
+        document.getElementById('det-msg').textContent = '✅ Link copiado!';
+        setTimeout(function() { document.getElementById('det-msg').textContent = ''; }, 3000);
+      });
+    } catch(e) {
+      prompt('Copie o link:', url);
+    }
+    _registrarCompartilhamento();
+  }
+}
+
+function _registrarCompartilhamento() {
+  if (!_detProdAtual) return;
+  google.script.run
+    .withSuccessHandler(function(r) {
+      if (r && r.ok) {
+        document.getElementById('det-compartilhamentos').textContent = r.dados.compartilhamentos;
+      }
+    })
+    .fn_compartilharProduto(_detProdAtual.id);
+}
+
+function voltarCatalogo() {
+  try { history.replaceState(null, '', window.location.pathname); } catch(e) {}
+  tela('catalogo');
+}
+
+// Verificar se URL tem #produto= ao carregar
+window.addEventListener('load', function() {
+  var hash = window.location.hash;
+  if (hash && hash.startsWith('#produto=')) {
+    var idProd = hash.replace('#produto=', '');
+    if (idProd) {
+      // Carregar config e catálogo em paralelo com o detalhe
+      google.script.run.withSuccessHandler(function(r){ if(r&&r.ok&&r.dados)_aplicarConfig(r.dados); }).fn_configPublica();
+      google.script.run.withSuccessHandler(function(rp){ if(rp&&rp.ok)_iniciarCatalogo(rp.dados||[]); }).fn_produtosComDecantsPublico();
+      abrirDetalheProduto(idProd);
+      return;
+    }
+  }
+});
+
+// ================================================================
+// GERENCIAR FOTOS NO ERP (aba Produtos)
+// ================================================================
+function abrirGerenciarFotos(id, nomeProduto) {
+  var html = '<div style="display:grid;gap:14px">'+
+    '<p style="margin:0;color:#555;font-size:13px">Galeria de fotos de <strong>'+nomeProduto+'</strong></p>'+
+    '<div id="fotos-lista"><div class="loading-txt">&#x23F3; Carregando...</div></div>'+
+    '<div style="border:2px dashed #b0c4de;border-radius:10px;padding:14px;background:#f0f5ff">'+
+      '<p style="font-size:13px;font-weight:600;color:#0f3460;margin-bottom:10px">&#x2795; Adicionar foto</p>'+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">'+
+        '<label style="cursor:pointer;padding:8px 14px;background:#fff;border:1.5px solid #b0c4de;border-radius:8px;font-size:13px;font-weight:600;color:#0f3460">'+
+          '&#x1F4C1; Arquivo<input type="file" id="nova-foto-file" accept="image/*" style="display:none" onchange="onNovaFotoChange(this,\''+id+'\')"></label>'+
+        '<label style="cursor:pointer;padding:8px 14px;background:#fff;border:1.5px solid #b0d4b0;border-radius:8px;font-size:13px;font-weight:600;color:#27ae60">'+
+          '&#x1F4F7; Camera<input type="file" id="nova-foto-cam" accept="image/*" capture="environment" style="display:none" onchange="onNovaFotoChange(this,\''+id+'\')"></label>'+
+      '</div>'+
+      '<input id="nova-foto-legenda" placeholder="Legenda (opcional)" style="width:100%;padding:8px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:13px">'+
+      '<div style="margin-top:10px;display:flex;align-items:center;gap:10px">'+
+        '<div id="nova-foto-prev" style="width:70px;height:70px;border-radius:8px;background:#f5e6d8;display:flex;align-items:center;justify-content:center;font-size:28px;overflow:hidden;flex-shrink:0">&#x1F338;</div>'+
+        '<button class="btn bp btn-sm" id="btn-add-foto" onclick="salvarNovaFoto(\''+id+'\')" disabled>&#x2705; Salvar foto</button>'+
+      '</div>'+
+      '<canvas id="nova-foto-canvas" style="display:none"></canvas>'+
+    '</div>'+
+    '<div class="msg-area" id="msg-fotos"></div>'+
+    '</div>';
+  abrirModal('&#x1F5BC;&#xFE0F; Fotos: '+nomeProduto, html);
+  _carregarFotosERP(id);
+}
+
+var _novaFotoB64 = '';
+var _novaFotoProdId = '';
+
+function onNovaFotoChange(input, idProd) {
+  _novaFotoProdId = idProd;
+  if (!input.files || !input.files[0]) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var img = new Image();
+    img.onload = function() {
+      var canvas = document.getElementById('nova-foto-canvas');
+      var max = 800, w = img.width, h = img.height;
+      if (w > max || h > max) { if(w>h){h=Math.round(h*max/w);w=max;}else{w=Math.round(w*max/h);h=max;} }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      _novaFotoB64 = canvas.toDataURL('image/jpeg', 0.80);
+      document.getElementById('nova-foto-prev').innerHTML = '<img src="'+_novaFotoB64+'" style="width:100%;height:100%;object-fit:cover">';
+      document.getElementById('btn-add-foto').disabled = false;
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
+function salvarNovaFoto(idProd) {
+  if (!_novaFotoB64) { msg('msg-fotos', 'Selecione uma foto primeiro'); return; }
+  var legenda = (document.getElementById('nova-foto-legenda')||{}).value || '';
+  var btn = document.getElementById('btn-add-foto');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+  msg('msg-fotos', '&#x23F3; Enviando...', '');
+  google.script.run
+    .withSuccessHandler(function(r) {
+      if (btn) { btn.disabled = false; btn.textContent = '✅ Salvar foto'; }
+      if (!r.ok) { msg('msg-fotos', '&#x274C; '+r.mensagem); return; }
+      msg('msg-fotos', '&#x2705; Foto adicionada!', 'ok');
+      _novaFotoB64 = '';
+      document.getElementById('nova-foto-prev').innerHTML = '&#x1F338;';
+      if (document.getElementById('nova-foto-legenda')) document.getElementById('nova-foto-legenda').value = '';
+      _carregarFotosERP(idProd);
+    })
+    .withFailureHandler(function(e) {
+      if (btn) { btn.disabled = false; btn.textContent = '✅ Salvar foto'; }
+      msg('msg-fotos', '&#x274C; '+e.message);
+    })
+    .fn_adicionarFotoProduto(S.token, idProd, _novaFotoB64, legenda, null);
+}
+
+function _carregarFotosERP(idProd) {
+  var el = document.getElementById('fotos-lista');
+  if (!el) return;
+  el.innerHTML = '<div class="loading-txt">&#x23F3;</div>';
+  google.script.run
+    .withSuccessHandler(function(r) {
+      if (!el) return;
+      if (!r.ok) { el.innerHTML = '<div class="merr">'+r.mensagem+'</div>'; return; }
+      var fotos = r.dados || [];
+      if (!fotos.length) { el.innerHTML = '<div class="empty-txt" style="padding:12px">Nenhuma foto na galeria ainda.</div>'; return; }
+      el.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px">'+
+        fotos.map(function(f) {
+          return '<div style="position:relative">'+
+            '<img src="'+f.url+'" style="width:100%;height:100px;object-fit:cover;border-radius:8px;border:2px solid '+(f.ativo!==false?'#ddd':'#fcc')+'" alt="'+(f.legenda||'')+'">'+
+            (f.legenda ? '<div style="font-size:11px;color:#666;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+f.legenda+'</div>' : '')+
+            '<button onclick="removerFotoERP(\''+f.id+'\',\''+idProd+'\')" style="position:absolute;top:4px;right:4px;background:rgba(231,76,60,0.85);border:none;color:white;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:12px;line-height:1">&#x2715;</button>'+
+          '</div>';
+        }).join('')+
+      '</div>';
+    })
+    .withFailureHandler(function(e) { if(el) el.innerHTML = '<div class="merr">'+e.message+'</div>'; })
+    .fn_listarFotosProduto(S.token, idProd);
+}
+
+function removerFotoERP(idFoto, idProd) {
+  if (!confirm('Remover esta foto?')) return;
+  google.script.run
+    .withSuccessHandler(function(r) {
+      if (!r.ok) { alert(r.mensagem); return; }
+      _carregarFotosERP(idProd);
+    })
+    .fn_removerFotoProduto(S.token, idFoto);
+}
+
 </script>
 </body>
 </html>
