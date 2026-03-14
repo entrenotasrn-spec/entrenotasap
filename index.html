@@ -4480,19 +4480,20 @@ function _getFinUnidade(){
 function aplicarFiltroFin(){
   var ini=document.getElementById('fin-ini').value;
   var fim=document.getElementById('fin-fim').value;
-  if(!ini||!fim){alert('Preencha as duas datas.');return;}
-  var periodo = {inicio:ini, fim:fim};
   var un = _getFinUnidade();
+  var periodo = {};
+  if(ini && fim) { periodo.inicio = ini; periodo.fim = fim; }
   if(un) periodo.id_unidade = un;
-  carregarDadosFin(periodo);
+  carregarDadosFin(Object.keys(periodo).length ? periodo : null);
 }
 
 function limparFiltroFin(){
   document.getElementById('fin-ini').value='';
   document.getElementById('fin-fim').value='';
-  var el = document.getElementById('fin-unidade');
-  if(el) el.value='';
-  carregarDadosFin(null);
+  var un = _getFinUnidade();
+  var periodo = {};
+  if(un) periodo.id_unidade = un;
+  carregarDadosFin(Object.keys(periodo).length ? periodo : null);
 }
 
 function _buildPeriodoFin(periodo) {
