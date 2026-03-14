@@ -213,6 +213,11 @@
     .det-foto-main-placeholder { width: 100%; height: 320px; display: flex; align-items: center; justify-content: center; font-size: 80px; background: #f9f4f0; }
     .det-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.35); cursor: pointer; transition: all 0.22s; flex-shrink: 0; border: none; padding: 0; }
     .det-dot.ativo { background: white; transform: scale(1.3); box-shadow: 0 0 4px rgba(255,255,255,0.6); }
+    .det-thumbs-bar { display: flex; gap: 8px; padding: 10px 14px; overflow-x: auto; background: #1a1a2e; scrollbar-width: none; }
+    .det-thumbs-bar::-webkit-scrollbar { display: none; }
+    .det-thumb { width: 60px; height: 60px; object-fit: cover; border-radius: 7px; cursor: pointer; border: 3px solid transparent; flex-shrink: 0; transition: border-color 0.18s, opacity 0.18s; opacity: 0.6; }
+    .det-thumb.ativa { border-color: white; opacity: 1; }
+    .det-legenda { text-align: center; padding: 7px 16px 5px; font-size: 13px; color: rgba(255,255,255,0.7); background: #1a1a2e; min-height: 28px; font-style: italic; letter-spacing: 0.2px; }
     .det-corpo { max-width: 700px; margin: 0 auto; padding: 22px 18px 40px; }
     .det-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
     .det-nome { font-size: 24px; font-weight: 900; color: #1a1a2e; margin-bottom: 6px; line-height: 1.2; }
@@ -913,13 +918,19 @@
   <!-- galeria de fotos -->
   <div class="det-galeria">
     <!-- strip deslizável -->
-    <div id="det-strip-outer" style="overflow:hidden;position:relative;background:#111;user-select:none;">
-      <div id="det-strip" style="display:flex;transition:transform 0.32s cubic-bezier(.4,0,.2,1);will-change:transform;">
-        <!-- slides injetados via JS -->
+    <div style="position:relative;">
+      <div id="det-strip-outer" style="overflow:hidden;background:#111;user-select:none;">
+        <div id="det-strip" style="display:flex;transition:transform 0.32s cubic-bezier(.4,0,.2,1);will-change:transform;">
+          <!-- slides injetados via JS -->
+        </div>
       </div>
+      <!-- pontinhos sobrepostos na foto -->
+      <div id="det-dots" style="display:none;position:absolute;bottom:10px;left:0;right:0;justify-content:center;gap:7px;"></div>
     </div>
-    <!-- pontinhos indicadores -->
-    <div id="det-dots" style="display:none;justify-content:center;gap:7px;padding:9px 0 5px;background:rgba(0,0,0,0.55);"></div>
+    <!-- miniaturas -->
+    <div id="det-thumbs-bar" class="det-thumbs-bar" style="display:none;"></div>
+    <!-- legenda da foto atual -->
+    <div id="det-legenda" class="det-legenda" style="display:none;"></div>
   </div>
   <!-- corpo -->
   <div class="det-corpo">
@@ -5067,49 +5078,49 @@ function _renderDetalheProduto(p) {
 }
 
 function _renderGaleriaDetalhe(p) {
-  var outer = document.getElementById('det-strip-outer');
-  var strip = document.getElementById('det-strip');
+  var outer  = document.getElementById('det-strip-outer');
+  var strip  = document.getElementById('det-strip');
   var dotsEl = document.getElementById('det-dots');
+  var thumbsBar = document.getElementById('det-thumbs-bar');
+  var legendaEl = document.getElementById('det-legenda');
 
-  // Montar lista de fotos: foto_url do produto PRIMEIRO, depois galeria
+  // Montar lista: foto_url do produto PRIMEIRO, depois fotos da galeria
   var todasFotos = [];
-  if (p.foto_url) todasFotos.push({ url: p.foto_url, legenda: p.nome });
+  if (p.foto_url) todasFotos.push({ url: p.foto_url, legenda: '' });
   if (_detFotosAtual && _detFotosAtual.length) {
     _detFotosAtual.forEach(function(f) {
-      // evitar duplicar se mesma url que foto principal
-      if (f.url !== p.foto_url) todasFotos.push({ url: f.url, legenda: f.legenda || '' });
+      if (f.url && f.url !== p.foto_url) todasFotos.push({ url: f.url, legenda: f.legenda || '' });
     });
   }
   _detFotosAtual = todasFotos;
   _detFotoIdx = 0;
 
   if (!todasFotos.length) {
-    // sem foto: placeholder emoji
     strip.innerHTML = '<div style="width:100%;min-width:100%;height:320px;display:flex;align-items:center;justify-content:center;font-size:80px;background:#f9f4f0;flex-shrink:0">&#x1F338;</div>';
-    outer.style.height = '320px';
     dotsEl.style.display = 'none';
+    if (thumbsBar) thumbsBar.style.display = 'none';
+    if (legendaEl) legendaEl.style.display = 'none';
     return;
   }
 
-  // Criar slides
+  // Slides
   strip.innerHTML = todasFotos.map(function(f) {
     return '<div class="det-slide" style="flex-shrink:0;width:100%;display:flex;align-items:center;justify-content:center;background:#111;">' +
       '<img src="' + f.url + '" alt="' + (f.legenda||'') + '" ' +
         'style="max-width:100%;max-height:420px;object-fit:contain;display:block;" ' +
-        'onerror="this.parentElement.innerHTML='<div style=&quot;font-size:60px;padding:40px&quot;>&#x1F338;</div>'">' +
+        'onerror="this.parentElement.innerHTML='<div style=&quot;font-size:60px;padding:40px;color:#fff&quot;>&#x1F338;</div>'">' +
     '</div>';
   }).join('');
 
-  // Ajustar largura dos slides depois que o DOM renderizar
+  // Ajustar largura dos slides
   requestAnimationFrame(function() {
     var w = outer.offsetWidth || window.innerWidth;
-    var slides = strip.querySelectorAll('.det-slide');
-    slides.forEach(function(s) { s.style.width = w + 'px'; });
+    strip.querySelectorAll('.det-slide').forEach(function(s) { s.style.width = w + 'px'; });
     strip.style.transform = 'translateX(0)';
     _detFotoIdx = 0;
   });
 
-  // Dots
+  // Pontinhos (só com 2+)
   if (todasFotos.length > 1) {
     dotsEl.style.display = 'flex';
     dotsEl.innerHTML = todasFotos.map(function(_, i) {
@@ -5119,9 +5130,31 @@ function _renderGaleriaDetalhe(p) {
     dotsEl.style.display = 'none';
   }
 
-  // Swipe touch
+  // Miniaturas
+  if (thumbsBar) {
+    if (todasFotos.length > 1) {
+      thumbsBar.style.display = 'flex';
+      thumbsBar.innerHTML = todasFotos.map(function(f, i) {
+        return '<img src="' + f.url + '" class="det-thumb' + (i === 0 ? ' ativa' : '') + '" ' +
+          'onclick="_detIrParaFoto(' + i + ')" alt="' + (f.legenda||'') + '" ' +
+          'onerror="this.style.display='none'">';
+      }).join('');
+    } else {
+      thumbsBar.style.display = 'none';
+    }
+  }
+
+  // Legenda da primeira foto
+  if (legendaEl) {
+    var leg0 = todasFotos[0] && todasFotos[0].legenda;
+    legendaEl.style.display = 'block';
+    legendaEl.textContent = leg0 || '';
+  }
+
+  // Swipe
   _initSwipeGaleria(outer, strip);
 }
+
 
 function _detIrParaFoto(idx) {
   var outer = document.getElementById('det-strip-outer');
@@ -5130,10 +5163,29 @@ function _detIrParaFoto(idx) {
   var w = outer.offsetWidth || window.innerWidth;
   _detFotoIdx = Math.max(0, Math.min(idx, _detFotosAtual.length - 1));
   strip.style.transform = 'translateX(-' + (_detFotoIdx * w) + 'px)';
-  // Atualizar dot ativo
+
+  // Dots
   document.querySelectorAll('.det-dot').forEach(function(d, i) {
     d.classList.toggle('ativo', i === _detFotoIdx);
   });
+
+  // Thumbs
+  var thumbsBar = document.getElementById('det-thumbs-bar');
+  if (thumbsBar) {
+    var thumbs = thumbsBar.querySelectorAll('.det-thumb');
+    thumbs.forEach(function(t, i) { t.classList.toggle('ativa', i === _detFotoIdx); });
+    // Scroll automático para a thumb ativa
+    var ativa = thumbsBar.querySelectorAll('.det-thumb')[_detFotoIdx];
+    if (ativa) ativa.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  }
+
+  // Legenda
+  var legendaEl = document.getElementById('det-legenda');
+  if (legendaEl && _detFotosAtual[_detFotoIdx]) {
+    var leg = _detFotosAtual[_detFotoIdx].legenda || '';
+    legendaEl.textContent = leg;
+    legendaEl.style.display = 'block';
+  }
 }
 
 function _initSwipeGaleria(outer, strip) {
