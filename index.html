@@ -627,6 +627,7 @@
         <div class="form-grid">
           <div class="form-group"><label>Produto</label><select id="dec-prod"><option value="">Selecione...</option></select></div>
           <div class="form-group"><label>Volume (ml)</label><input id="dec-ml" type="number" placeholder="ex: 100"></div>
+          <div class="form-group"><label>Unidade</label><select id="dec-unidade"><option value="">-- Selecione --</option></select></div>
           <div class="form-group"><label>Local</label><input id="dec-local" value="Prateleira"></div>
         </div>
         <button class="btn bp" style="margin-top:14px" id="btn-abrir-frasco" onclick="btnGuard(this,function(re){abrirFrasco(re)})">Abrir Frasco</button>
@@ -637,6 +638,7 @@
         <div class="form-grid">
           <div class="form-group"><label>Produto</label><select id="prova-prod"><option value="">Selecione...</option></select></div>
           <div class="form-group"><label>ML</label><input id="prova-ml" type="number" value="2" min="1"></div>
+          <div class="form-group"><label>Unidade</label><select id="prova-unidade"><option value="">-- Selecione --</option></select></div>
           <div class="form-group"><label>Local</label><input id="prova-local" value="Prateleira"></div>
         </div>
         <button class="btn bw" style="margin-top:14px" id="btn-registrar-prova" onclick="btnGuard(this,function(re){registrarProva(re)})">Registrar Prova</button>
@@ -750,6 +752,12 @@
       </div>
     </div>
 
+
+    <!-- RANKINGS -->
+    <div id="pg-rankings" class="pagina">
+      <p class="page-title">&#x1F3C6; Rankings de Produtos</p>
+      <div id="rankings-content"><div class="loading-txt">&#x23F3; Carregando...</div></div>
+    </div>
     <div id="pg-financeiro" class="pagina">
       <p class="page-title">Financeiro</p>
       <div id="fin-content"><div class="loading-txt">⏳</div></div>
@@ -1420,7 +1428,7 @@ var MENUS_ADM = [
   {sec:'Operacao'},{id:'produtos',ic:'&#x1F338;',lb:'Produtos'},{id:'fabricantes',ic:'&#x1F3F7;',lb:'Fabricantes'},{id:'categorias',ic:'&#x1F4C2;',lb:'Categorias'},{id:'estoque',ic:'&#x1F4E6;',lb:'Estoque'},{id:'decant',ic:'&#x1F9F4;',lb:'Decant'},
   {sec:'Transacoes'},{id:'compras',ic:'&#x1F6CD;&#xFE0F;',lb:'Compras'},{id:'fornecedores',ic:'&#x1F3ED;',lb:'Fornecedores'},{id:'vendas',ic:'&#x1F4B0;',lb:'Vendas'},{id:'pedidos',ic:'&#x1F4CB;',lb:'Pedidos Publicos'},{id:'transferencias',ic:'&#x1F500;',lb:'Transferencias'},
   {sec:'Cadastros'},{id:'clientes',ic:'&#x1F465;',lb:'Clientes'},{id:'usuarios',ic:'&#x1F511;',lb:'Usuarios'},{id:'unidades',ic:'&#x1F3EA;',lb:'Unidades'},
-  {sec:'Relatorios'},{id:'financeiro',ic:'&#x1F4CA;',lb:'Financeiro'},{id:'vencimentos',ic:'&#x23F0;',lb:'Vencimentos'},
+  {sec:'Relatorios'},{id:'rankings',ic:'&#x1F3C6;',lb:'Rankings'},{id:'financeiro',ic:'&#x1F4CA;',lb:'Financeiro'},{id:'vencimentos',ic:'&#x23F0;',lb:'Vencimentos'},
 ];
 var MENUS_USR = [
   {sec:'Principal'},{id:'home',ic:'&#x1F3E0;',lb:'Dashboard'},
@@ -1452,7 +1460,7 @@ function nav(id) {
     fornecedores:function(){carregarFornecedores();},
     vendas:function(){carregarVendas();preProds();carregarUnidades();carregarCliSelect();var el=document.getElementById('v-data');if(el&&!el.value){var h=new Date();el.value=h.getFullYear()+'-'+(('0'+(h.getMonth()+1)).slice(-2))+'-'+(('0'+h.getDate()).slice(-2));}},
     unidades:function(){carregarUnidades();carregarAtribuicoes();},transferencias:function(){carregarUnidades();preProds();carregarPedidosTransf();},vencimentos:function(){carregarVencimentos();},fabricantes:function(){carregarFabricantes();},categorias:function(){carregarCategorias();},pedidos:carregarPedidos,decant:function(){carregarDecants();preProds();carregarPrecosDecant();},
-    clientes:carregarClientes,financeiro:carregarFinanceiro,usuarios:carregarUsuarios,configuracoes:carregarConfiguracoes};
+    clientes:carregarClientes,rankings:carregarRankings,financeiro:carregarFinanceiro,usuarios:carregarUsuarios,configuracoes:carregarConfiguracoes};
   if(ac[id]) ac[id]();
 }
 
@@ -1783,6 +1791,7 @@ function carregarProdutos(){
           '<td><strong>'+p.nome+'</strong><br><small style="color:#999">'+(p.descricao||'')+'</small></td>'+
           '<td><span class="cat-fab-badge">'+(p.nome_fabricante||'--')+'</span></td>'+
           '<td><span class="cat-cat-badge">'+(p.nome_categoria||'--')+'</span></td>'+
+          '<td><strong>'+R(p.preco_venda_atual)+'</strong></td>'+
           '<td>'+(p.ativo?'<span class="bdg bg">Ativo</span>':'<span class="bdg br">Inativo</span>')+'</td>'+
           '<td style="white-space:nowrap">'+
             '<button class="btn bb btn-sm" onclick="abrirGerenciarFotos(\''+p.id+'\',\''+p.nome.replace(/\'/g,"\'")+'\')">&#x1F5BC; Fotos</button> '+
@@ -3971,16 +3980,39 @@ function gerarPdfPedido(id){
 
 function _confirmarPedBtn(el) {
   var pid = el.getAttribute('data-pid');
-  btnGuard(el, function(re){ confirmarPed(pid, false, re); });
+  // Abrir modal de seleção de unidade antes de confirmar
+  var optsUn = (_unidades||[]).filter(function(u){return u.ativa;}).map(function(u){
+    return '<option value="'+u.id+'">'+u.nome+'</option>';
+  }).join('');
+  var html =
+    '<div style="display:grid;gap:14px">'+
+    '<p style="margin:0;color:#555;font-size:13px">Selecione a unidade que vai atender este pedido:</p>'+
+    '<div class="form-group"><label>Unidade</label>'+
+    '<select id="pedido-unidade-sel" style="width:100%"><option value="">-- Selecione --</option>'+optsUn+'</select></div>'+
+    '<div style="display:flex;gap:10px;justify-content:flex-end">'+
+    '<button class="btn" style="background:#eee;color:#555" onclick="fecharModalGenerico()">Cancelar</button>'+
+    '<button class="btn bs" onclick="_confirmarPedComUnidade(\''+pid+'\',this)">&#x2705; Confirmar</button>'+
+    '</div>'+
+    '<div class="msg-area" id="msg-ped-unidade"></div>'+
+    '</div>';
+  abrirModal('&#x1F3EA; Confirmar Pedido', html);
 }
 
-function confirmarPed(id, forcar, reabilitar){
+function _confirmarPedComUnidade(pid, btn) {
+  var idUnidade = (document.getElementById('pedido-unidade-sel')||{}).value||'';
+  if (!idUnidade) { msg('msg-ped-unidade','Selecione a unidade'); return; }
+  btn.disabled = true; btn.innerHTML = '&#x23F3;';
+  fecharModalGenerico();
+  confirmarPed(pid, false, null, idUnidade);
+}
+
+function confirmarPed(id, forcar, reabilitar, idUnidade){
   google.script.run
     .withSuccessHandler(function(r){
       if(r && r.alerta_estoque){
         var lista=(r.itens||[]).map(function(s){return '&#x2022; '+s;}).join('\n');
         if(confirm('&#x26A0;&#xFE0F; Estoque insuficiente para:\n\n'+lista+'\n\nDeseja confirmar o pedido mesmo assim?')){
-          confirmarPed(id, true, reabilitar);
+          confirmarPed(id, true, reabilitar, idUnidade);
         } else { if(reabilitar)reabilitar(); }
         return;
       }
@@ -3988,7 +4020,7 @@ function confirmarPed(id, forcar, reabilitar){
       else{alert(r.mensagem);if(reabilitar)reabilitar();}
     })
     .withFailureHandler(function(e){alert(e.message);if(reabilitar)reabilitar();})
-    .fn_confirmarPedidoPublico(S.token, id, forcar||false);
+    .fn_confirmarPedidoPublico(S.token, id, forcar||false, idUnidade||'');
 }
 function cancelarPed(id){if(!confirm('Cancelar pedido?'))return;google.script.run.withSuccessHandler(function(r){if(r.ok)carregarPedidos();else alert(r.mensagem);}).fn_cancelarPedidoPublico(S.token,id);}
 
@@ -4003,6 +4035,10 @@ function carregarDecants(){
     var opts='<option value="">Selecione...</option>'+prods.map(function(p){return '<option value="'+p.id+'">'+p.nome+'</option>';}).join('');
     document.getElementById('dec-prod').innerHTML=opts;
     document.getElementById('prova-prod').innerHTML=opts;
+    // Preencher selects de unidade
+    var optsUn='<option value="">-- Selecione --</option>'+(_unidades||[]).filter(function(u){return u.ativa;}).map(function(u){return '<option value="'+u.id+'">'+u.nome+'</option>';}).join('');
+    var duEl=document.getElementById('dec-unidade'); if(duEl) duEl.innerHTML=optsUn;
+    var puEl=document.getElementById('prova-unidade'); if(puEl) puEl.innerHTML=optsUn;
     // Preencher select de precos de decant tambem
     var selPrecoProd = document.getElementById('dec-preco-prod');
     if(selPrecoProd) selPrecoProd.innerHTML='<option value="">Selecione...</option>'+prods.map(function(p){return '<option value="'+p.id+'">'+p.nome+'</option>';}).join('');
@@ -4096,13 +4132,13 @@ function removerPrecoDecant(id){
 }
 
 function abrirFrasco(reabilitar){
-  var dados={id_produto:document.getElementById('dec-prod').value,volume_total_ml:document.getElementById('dec-ml').value,local:document.getElementById('dec-local').value||'Prateleira'};
+  var dados={id_produto:document.getElementById('dec-prod').value,volume_total_ml:document.getElementById('dec-ml').value,local:document.getElementById('dec-local').value||'Prateleira',id_unidade:(document.getElementById('dec-unidade')||{}).value||''};
   if(!dados.id_produto||!dados.volume_total_ml){msg('msg-decant','Preencha produto e volume');if(reabilitar)reabilitar();return;}
   google.script.run.withSuccessHandler(function(r){if(!r.ok){msg('msg-decant',r.mensagem);if(reabilitar)reabilitar();return;}msg('msg-decant','Frasco aberto!','ok');carregarDecants();if(reabilitar)reabilitar();}).withFailureHandler(function(e){msg('msg-decant',e.message);if(reabilitar)reabilitar();}).fn_abrirFrascoDecant(S.token,dados);
 }
 
 function registrarProva(reabilitar){
-  var dados={id_produto:document.getElementById('prova-prod').value,ml_prova:document.getElementById('prova-ml').value,local:document.getElementById('prova-local').value||'Prateleira'};
+  var dados={id_produto:document.getElementById('prova-prod').value,ml_prova:document.getElementById('prova-ml').value,local:document.getElementById('prova-local').value||'Prateleira',id_unidade:(document.getElementById('prova-unidade')||{}).value||''};
   if(!dados.id_produto){msg('msg-prova','Selecione o produto');if(reabilitar)reabilitar();return;}
   google.script.run.withSuccessHandler(function(r){if(!r.ok){msg('msg-prova',r.mensagem);if(reabilitar)reabilitar();return;}msg('msg-prova','Prova registrada!','ok');carregarDecants();if(reabilitar)reabilitar();}).withFailureHandler(function(e){msg('msg-prova',e.message);if(reabilitar)reabilitar();}).fn_registrarProva(S.token,dados);
 }
@@ -4208,6 +4244,185 @@ function salvarEdicaoCliente(id) {
     .withFailureHandler(function(e) { msg('msg-edit-cli', '&#x274C; '+e.message); })
     .fn_atualizarCliente(S.token, id, dados);
 }
+
+// ================================================================
+// RANKINGS DE PRODUTOS
+// ================================================================
+function carregarRankings() {
+  var el = document.getElementById('rankings-content');
+  el.innerHTML = '<div class="loading-txt">&#x23F3; Carregando rankings...</div>';
+
+  // Carregar vendas e produtos em paralelo
+  var dadosVendas = null, dadosProds = null;
+
+  function tentar() {
+    if (dadosVendas === null || dadosProds === null) return;
+    _renderRankings(dadosVendas, dadosProds);
+  }
+
+  google.script.run
+    .withSuccessHandler(function(r) {
+      dadosVendas = (r && r.ok) ? (r.dados || []) : [];
+      tentar();
+    })
+    .withFailureHandler(function() { dadosVendas = []; tentar(); })
+    .fn_listarVendas(S.token, null);
+
+  google.script.run
+    .withSuccessHandler(function(r) {
+      dadosProds = (r && r.ok) ? (r.dados || []) : [];
+      tentar();
+    })
+    .withFailureHandler(function() { dadosProds = []; tentar(); })
+    .fn_produtosComDecantsPublico();
+}
+
+function _renderRankings(vendas, produtosPublicos) {
+  var el = document.getElementById('rankings-content');
+
+  // --- Calcular rankings a partir das vendas ---
+  var mapProd = {}; // id -> { nome, qtd, receita, decant_ml, decant_receita }
+  vendas.forEach(function(v) {
+    if (v.status_venda === 'cancelada') return;
+    (v.itens || []).forEach(function(i) {
+      var id = i.id_produto;
+      if (!id) return;
+      if (!mapProd[id]) mapProd[id] = { id: id, nome: i.nome_produto || '?', qtd: 0, receita: 0, ml: 0, decant_receita: 0 };
+      var qtd = parseFloat(i.quantidade || 0);
+      var val = parseFloat(i.valor_total || 0);
+      var tipo = String(i.tipo_item || 'normal');
+      mapProd[id].qtd     += (tipo === 'normal') ? qtd : 0;
+      mapProd[id].receita += val;
+      mapProd[id].ml      += (tipo === 'decant') ? (parseFloat(i.ml_decant || 0) * qtd) : 0;
+      mapProd[id].decant_receita += (tipo === 'decant') ? val : 0;
+    });
+  });
+
+  // Mapa de curtidas/compartilhamentos do catálogo público
+  var mapCurtidas = {};
+  produtosPublicos.forEach(function(p) {
+    mapCurtidas[p.id] = { curtidas: p.curtidas || 0, compartilhamentos: p.compartilhamentos || 0, foto: p.foto_url || '', fab: p.nome_fabricante || '' };
+  });
+
+  // Enriquecer com curtidas
+  Object.keys(mapProd).forEach(function(id) {
+    var c = mapCurtidas[id] || {};
+    mapProd[id].curtidas          = c.curtidas || 0;
+    mapProd[id].compartilhamentos = c.compartilhamentos || 0;
+    mapProd[id].foto              = c.foto || '';
+    mapProd[id].fab               = c.fab || '';
+  });
+
+  // Produtos sem venda mas com curtidas/compartilhamentos
+  produtosPublicos.forEach(function(p) {
+    if (!mapProd[p.id] && (p.curtidas > 0 || p.compartilhamentos > 0)) {
+      mapProd[p.id] = {
+        id: p.id, nome: p.nome, qtd: 0, receita: 0, ml: 0, decant_receita: 0,
+        curtidas: p.curtidas || 0, compartilhamentos: p.compartilhamentos || 0,
+        foto: p.foto_url || '', fab: p.nome_fabricante || ''
+      };
+    }
+  });
+
+  var lista = Object.values(mapProd);
+
+  // Tops
+  var topReceita    = lista.slice().sort(function(a,b){ return b.receita - a.receita; }).slice(0,10);
+  var topQtd        = lista.slice().sort(function(a,b){ return b.qtd - a.qtd; }).filter(function(x){return x.qtd>0;}).slice(0,10);
+  var topCurtidas   = lista.slice().sort(function(a,b){ return b.curtidas - a.curtidas; }).filter(function(x){return x.curtidas>0;}).slice(0,10);
+  var topCompart    = lista.slice().sort(function(a,b){ return b.compartilhamentos - a.compartilhamentos; }).filter(function(x){return x.compartilhamentos>0;}).slice(0,10);
+  var topDecant     = lista.slice().sort(function(a,b){ return b.ml - a.ml; }).filter(function(x){return x.ml>0;}).slice(0,10);
+
+  function medalha(i) {
+    return i === 0 ? '&#x1F947;' : i === 1 ? '&#x1F948;' : i === 2 ? '&#x1F949;' :
+      '<span style="background:#eaf2fd;color:#0f3460;border-radius:4px;padding:1px 6px;font-size:11px;font-weight:700">'+(i+1)+'</span>';
+  }
+
+  function fotoThumb(url) {
+    return url
+      ? '<img src="'+url+'" style="width:32px;height:32px;object-fit:cover;border-radius:6px;margin-right:8px;vertical-align:middle" onerror="this.style.display='none'">'
+      : '<span style="font-size:20px;margin-right:8px">&#x1F338;</span>';
+  }
+
+  function tabelaRanking(titulo, icone, cor, itens, colNome, colVal) {
+    if (!itens.length) return '<div class="form-card" style="margin:0"><h3 style="color:'+cor+';margin-bottom:12px">'+icone+' '+titulo+'</h3><div class="empty-txt" style="padding:18px">Sem dados</div></div>';
+    return '<div class="form-card" style="margin:0;border-top:3px solid '+cor+'">'+
+      '<h3 style="color:'+cor+';margin-bottom:14px">'+icone+' '+titulo+'</h3>'+
+      '<table style="width:100%;font-size:13px"><thead><tr>'+
+        '<th style="width:30px">#</th>'+
+        '<th style="text-align:left">Produto</th>'+
+        '<th style="text-align:right">'+colNome+'</th>'+
+      '</tr></thead><tbody>'+
+      itens.map(function(p,i){
+        return '<tr style="border-bottom:1px solid #f5f5f5">'+
+          '<td style="text-align:center;font-size:18px">'+medalha(i)+'</td>'+
+          '<td style="padding:8px 6px">'+fotoThumb(p.foto)+'<strong>'+p.nome+'</strong>'+(p.fab?'<br><small style="color:#aaa">'+p.fab+'</small>':'')+'</td>'+
+          '<td style="text-align:right;font-weight:800;color:'+cor+'">'+colVal(p)+'</td>'+
+        '</tr>';
+      }).join('')+
+      '</tbody></table></div>';
+  }
+
+  // KPIs gerais
+  var totalVendas  = vendas.filter(function(v){return v.status_venda!=='cancelada';}).length;
+  var totalReceita = lista.reduce(function(a,p){return a+p.receita;},0);
+  var totalCurtidas= lista.reduce(function(a,p){return a+p.curtidas;},0);
+  var totalCompart = lista.reduce(function(a,p){return a+p.compartilhamentos;},0);
+  var totalML      = lista.reduce(function(a,p){return a+p.ml;},0);
+
+  var html = '';
+
+  // KPIs
+  html += '<div class="cards-row">';
+  html += '<div class="card"><div class="lbl">&#x1F4B0; Faturamento Total</div><div class="val cv">'+R(totalReceita)+'</div><div class="sub">em '+totalVendas+' vendas</div></div>';
+  html += '<div class="card"><div class="lbl">&#x2764;&#xFE0F; Total de Curtidas</div><div class="val cr">'+totalCurtidas+'</div><div class="sub">no catálogo</div></div>';
+  html += '<div class="card"><div class="lbl">&#x1F517; Compartilhamentos</div><div class="val ca">'+totalCompart+'</div><div class="sub">no catálogo</div></div>';
+  html += '<div class="card"><div class="lbl">&#x1F4A7; ML Decant Vendidos</div><div class="val cl">'+totalML.toFixed(0)+'ml</div><div class="sub">em decants</div></div>';
+  html += '</div>';
+
+  // Grade de rankings 2x2
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px">';
+  html += tabelaRanking('Mais Faturamento','&#x1F4B5;','#27ae60', topReceita, 'Receita', function(p){ return R(p.receita); });
+  html += tabelaRanking('Mais Vendidos (frascos)','&#x1F9F4;','#0f3460', topQtd, 'Qtd', function(p){ return p.qtd+' un'; });
+  html += tabelaRanking('Mais Curtidos','&#x2764;&#xFE0F;','#e74c3c', topCurtidas, 'Curtidas', function(p){ return p.curtidas; });
+  html += tabelaRanking('Mais Compartilhados','&#x1F517;','#533483', topCompart, 'Compartilhamentos', function(p){ return p.compartilhamentos; });
+  html += '</div>';
+
+  // Decant separado (linha cheia)
+  if (topDecant.length) {
+    html += '<div style="margin-bottom:18px">';
+    html += tabelaRanking('Mais Vendidos em Decant (ml)','&#x1F4A7;','#e67e22', topDecant, 'ML Vendidos', function(p){ return p.ml.toFixed(0)+'ml ('+R(p.decant_receita)+')'; });
+    html += '</div>';
+  }
+
+  // Tabela completa
+  html += '<div class="tbl-wrap"><div class="tbl-hd"><h3>&#x1F4CA; Visao Completa por Produto</h3>'+
+    '<button class="btn bp btn-sm" onclick="carregarRankings()">&#x21BB;</button></div>'+
+    '<table><thead><tr>'+
+      '<th>#</th><th>Produto</th><th>Fabricante</th>'+
+      '<th style="text-align:right">Qtd Frascos</th>'+
+      '<th style="text-align:right">ML Decant</th>'+
+      '<th style="text-align:right">Receita Total</th>'+
+      '<th style="text-align:center">&#x2764;</th>'+
+      '<th style="text-align:center">&#x1F517;</th>'+
+    '</tr></thead><tbody>'+
+    lista.slice().sort(function(a,b){return b.receita-a.receita;}).map(function(p,i){
+      return '<tr>'+
+        '<td style="color:#aaa;font-size:12px">'+(i+1)+'</td>'+
+        '<td>'+fotoThumb(p.foto)+'<strong>'+p.nome+'</strong></td>'+
+        '<td style="color:#888;font-size:12px">'+(p.fab||'--')+'</td>'+
+        '<td style="text-align:right">'+(p.qtd>0?'<strong>'+p.qtd+'</strong>':'<span style="color:#ddd">--</span>')+'</td>'+
+        '<td style="text-align:right;color:#e67e22">'+(p.ml>0?p.ml.toFixed(0)+'ml':'<span style="color:#ddd">--</span>')+'</td>'+
+        '<td style="text-align:right;font-weight:700;color:#27ae60">'+(p.receita>0?R(p.receita):'<span style="color:#ddd">--</span>')+'</td>'+
+        '<td style="text-align:center;color:#e74c3c;font-weight:700">'+(p.curtidas||'<span style="color:#ddd">0</span>')+'</td>'+
+        '<td style="text-align:center;color:#533483;font-weight:700">'+(p.compartilhamentos||'<span style="color:#ddd">0</span>')+'</td>'+
+      '</tr>';
+    }).join('')+
+    '</tbody></table></div>';
+
+  el.innerHTML = html;
+}
+
 
 // ================================================================
 // FINANCEIRO
