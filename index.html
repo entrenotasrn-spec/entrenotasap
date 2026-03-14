@@ -389,6 +389,7 @@
           <div class="form-group"><label>Produto</label><select id="perda-prod"><option value="">Selecione...</option></select></div>
           <div class="form-group"><label>Tipo</label>
             <select id="perda-tipo"><option value="quebra">Quebra</option><option value="vencimento">Vencimento</option><option value="extravio">Extravio</option><option value="inadimplencia">Inadimplência</option></select></div>
+          <div class="form-group"><label>Unidade</label><select id="perda-unidade"><option value="">-- Selecione --</option></select></div>
           <div class="form-group"><label>Quantidade</label><input id="perda-qtd" type="number" min="1" value="1"></div>
           <div class="form-group"><label>Local</label><input id="perda-local" value="Prateleira"></div>
         </div>
@@ -2292,7 +2293,7 @@ function _carregarLotes(filtroUn) {
 }
 
 function registrarPerda(re){
-  var dados={id_produto:document.getElementById('perda-prod').value,tipo:document.getElementById('perda-tipo').value,quantidade:document.getElementById('perda-qtd').value,local:document.getElementById('perda-local').value};
+  var dados={id_produto:document.getElementById('perda-prod').value,tipo:document.getElementById('perda-tipo').value,quantidade:document.getElementById('perda-qtd').value,local:document.getElementById('perda-local').value,id_unidade:(document.getElementById('perda-unidade')||{}).value||''};
   if(!dados.id_produto){msg('msg-perda','Selecione o produto');if(re)re();return;}
   google.script.run.withSuccessHandler(function(r){if(!r.ok){msg('msg-perda',r.mensagem);if(re)re();return;}msg('msg-perda','Perda registrada!','ok');carregarEstoque();if(re)re();}).withFailureHandler(function(e){msg('msg-perda',e.message);if(re)re();}).fn_registrarPerda(S.token,dados);
 }
@@ -2948,7 +2949,7 @@ function _preencherSelectsUnidade() {
   var optsUn = '<option value="">-- Selecione --</option>' + ativas.map(function(u) {
     return '<option value="' + u.id + '">' + u.nome + '</option>';
   }).join('');
-  ['atr-unidade','co-unidade','vd-unidade','tr-origem','tr-destino'].forEach(function(id) {
+  ['atr-unidade','co-unidade','vd-unidade','tr-origem','tr-destino','perda-unidade'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.innerHTML = optsUn;
   });
