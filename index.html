@@ -4581,7 +4581,7 @@ function _renderCatalogo(lista) {
         (tagsHtml ? '<div class="prod-tags">'+tagsHtml+'</div>' : '')+
         '<div class="prod-nome">'+p.nome+'</div>'+
         '<div class="prod-desc">'+(p.descricao||'')+'</div>'+
-        '<div class="prod-preco">'+R(preco)+'</div>'+
+        (frascoAtivo ? '<div class="prod-preco">'+R(preco)+'</div>' : '')+
         btnFrasco+
         btnsDecant+
       '</div></div>';
