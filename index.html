@@ -5146,21 +5146,27 @@ window.addEventListener('load', function() {
 // GERENCIAR FOTOS NO ERP (aba Produtos)
 // ================================================================
 function abrirGerenciarFotos(id, nomeProduto) {
+  _novaFotoB64 = '';
+  _novaFotoUrl = '';
   var html = '<div style="display:grid;gap:14px">'+
     '<p style="margin:0;color:#555;font-size:13px">Galeria de fotos de <strong>'+nomeProduto+'</strong></p>'+
     '<div id="fotos-lista"><div class="loading-txt">&#x23F3; Carregando...</div></div>'+
     '<div style="border:2px dashed #b0c4de;border-radius:10px;padding:14px;background:#f0f5ff">'+
       '<p style="font-size:13px;font-weight:600;color:#0f3460;margin-bottom:10px">&#x2795; Adicionar foto</p>'+
-      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">'+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">'+
         '<label style="cursor:pointer;padding:8px 14px;background:#fff;border:1.5px solid #b0c4de;border-radius:8px;font-size:13px;font-weight:600;color:#0f3460">'+
-          '&#x1F4C1; Arquivo<input type="file" id="nova-foto-file" accept="image/*" style="display:none" onchange="onNovaFotoChange(this,\''+id+'\')"></label>'+
+          '&#x1F4C1; Arquivo<input type="file" id="nova-foto-file" accept="image/*" style="display:none" onchange="onNovaFotoChange(this,\''+id+'\')">' + '</label>'+
         '<label style="cursor:pointer;padding:8px 14px;background:#fff;border:1.5px solid #b0d4b0;border-radius:8px;font-size:13px;font-weight:600;color:#27ae60">'+
-          '&#x1F4F7; Camera<input type="file" id="nova-foto-cam" accept="image/*" capture="environment" style="display:none" onchange="onNovaFotoChange(this,\''+id+'\')"></label>'+
+          '&#x1F4F7; Camera<input type="file" id="nova-foto-cam" accept="image/*" capture="environment" style="display:none" onchange="onNovaFotoChange(this,\''+id+'\')">' + '</label>'+
       '</div>'+
+      '<input id="nova-foto-url-input" placeholder="...ou cole uma URL da imagem" style="width:100%;padding:8px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:13px;margin-bottom:8px" oninput="onNovaFotoUrlChange(this.value)">'+
       '<input id="nova-foto-legenda" placeholder="Legenda (opcional)" style="width:100%;padding:8px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:13px">'+
       '<div style="margin-top:10px;display:flex;align-items:center;gap:10px">'+
         '<div id="nova-foto-prev" style="width:70px;height:70px;border-radius:8px;background:#f5e6d8;display:flex;align-items:center;justify-content:center;font-size:28px;overflow:hidden;flex-shrink:0">&#x1F338;</div>'+
-        '<button class="btn bp btn-sm" id="btn-add-foto" onclick="salvarNovaFoto(\''+id+'\')" disabled>&#x2705; Salvar foto</button>'+
+        '<div style="display:flex;flex-direction:column;gap:6px">'+
+          '<button class="btn bp btn-sm" id="btn-add-foto" onclick="salvarNovaFoto(\''+id+'\')" disabled>&#x2705; Salvar foto</button>'+
+          '<button class="btn btn-sm" style="background:#eee;color:#888" onclick="limparNovaFoto()">&#x2715; Limpar</button>'+
+        '</div>'+
       '</div>'+
       '<canvas id="nova-foto-canvas" style="display:none"></canvas>'+
     '</div>'+
@@ -5195,26 +5201,78 @@ function onNovaFotoChange(input, idProd) {
 }
 
 function salvarNovaFoto(idProd) {
-  if (!_novaFotoB64) { msg('msg-fotos', 'Selecione uma foto primeiro'); return; }
+  if (!_novaFotoB64 && !_novaFotoUrl) { msg('msg-fotos', 'Selecione ou cole uma URL de foto'); return; }
   var legenda = (document.getElementById('nova-foto-legenda')||{}).value || '';
   var btn = document.getElementById('btn-add-foto');
-  if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
-  msg('msg-fotos', '&#x23F3; Enviando...', '');
-  google.script.run
-    .withSuccessHandler(function(r) {
-      if (btn) { btn.disabled = false; btn.textContent = '✅ Salvar foto'; }
-      if (!r.ok) { msg('msg-fotos', '&#x274C; '+r.mensagem); return; }
-      msg('msg-fotos', '&#x2705; Foto adicionada!', 'ok');
-      _novaFotoB64 = '';
-      document.getElementById('nova-foto-prev').innerHTML = '&#x1F338;';
-      if (document.getElementById('nova-foto-legenda')) document.getElementById('nova-foto-legenda').value = '';
-      _carregarFotosERP(idProd);
-    })
-    .withFailureHandler(function(e) {
-      if (btn) { btn.disabled = false; btn.textContent = '✅ Salvar foto'; }
-      msg('msg-fotos', '&#x274C; '+e.message);
-    })
-    .fn_adicionarFotoProduto(S.token, idProd, _novaFotoB64, legenda, null);
+  if (btn) { btn.disabled = true; btn.innerHTML = '&#x23F3;'; }
+  msg('msg-fotos', '&#x23F3; Salvando...', '');
+
+  function _finalizar(url) {
+    // Salvar URL diretamente na aba fotos_produto via backend
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (btn) { btn.disabled = false; btn.innerHTML = '&#x2705; Salvar foto'; }
+        if (!r.ok) { msg('msg-fotos', '&#x274C; '+r.mensagem); return; }
+        msg('msg-fotos', '&#x2705; Foto adicionada!', 'ok');
+        _novaFotoB64 = ''; _novaFotoUrl = '';
+        var prev = document.getElementById('nova-foto-prev'); if(prev) prev.innerHTML = '&#x1F338;';
+        var urlEl = document.getElementById('nova-foto-url-input'); if(urlEl) urlEl.value = '';
+        var legEl = document.getElementById('nova-foto-legenda'); if(legEl) legEl.value = '';
+        _carregarFotosERP(idProd);
+      })
+      .withFailureHandler(function(e) {
+        if (btn) { btn.disabled = false; btn.innerHTML = '&#x2705; Salvar foto'; }
+        msg('msg-fotos', '&#x274C; '+e.message);
+      })
+      .fn_adicionarFotoProdutoUrl(S.token, idProd, url, legenda);
+  }
+
+  if (_novaFotoB64) {
+    // Upload base64 para o Drive
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (!r.ok) {
+          if (btn) { btn.disabled = false; btn.innerHTML = '&#x2705; Salvar foto'; }
+          msg('msg-fotos', '&#x274C; Erro no upload: '+r.mensagem); return;
+        }
+        _finalizar(r.dados.url);
+      })
+      .withFailureHandler(function(e) {
+        if (btn) { btn.disabled = false; btn.innerHTML = '&#x2705; Salvar foto'; }
+        msg('msg-fotos', '&#x274C; '+e.message);
+      })
+      .fn_salvarFotoBase64(S.token, _novaFotoB64, 'galeria');
+  } else {
+    _finalizar(_novaFotoUrl);
+  }
+}
+
+var _novaFotoB64 = '';
+var _novaFotoUrl = '';
+
+function onNovaFotoUrlChange(url) {
+  _novaFotoB64 = '';
+  _novaFotoUrl = url.trim();
+  var prev = document.getElementById('nova-foto-prev');
+  var btn  = document.getElementById('btn-add-foto');
+  if (!url) {
+    prev.innerHTML = '&#x1F338;';
+    if (!_novaFotoB64) btn.disabled = true;
+    return;
+  }
+  prev.innerHTML = '<img src="'+url+'" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML=\'&#x274C;\'">';
+  btn.disabled = false;
+}
+
+function limparNovaFoto() {
+  _novaFotoB64 = '';
+  _novaFotoUrl = '';
+  var prev = document.getElementById('nova-foto-prev');
+  if (prev) prev.innerHTML = '&#x1F338;';
+  var urlEl = document.getElementById('nova-foto-url-input');
+  if (urlEl) urlEl.value = '';
+  var btn = document.getElementById('btn-add-foto');
+  if (btn) btn.disabled = true;
 }
 
 function _carregarFotosERP(idProd) {
