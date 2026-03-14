@@ -381,13 +381,7 @@
         </div>
         <!-- Visão resumo por produto+unidade -->
         <div id="tbl-estoque"><div class="loading-txt">&#x23F3;</div></div>
-        <!-- Visão lotes detalhados (expansível) -->
-        <div style="margin-top:18px">
-          <div class="tbl-hd"><h3 style="font-size:14px;color:#666">&#x1F50D; Lotes Detalhados (FIFO)</h3>
-            <button class="btn bw btn-sm" onclick="toggleLotes()">Expandir / Recolher</button>
-          </div>
-          <div id="tbl-lotes" style="display:none"><div class="loading-txt">&#x23F3;</div></div>
-        </div>
+
       </div>
       <div class="form-card">
         <h3>Registrar Perda</h3>
@@ -2188,10 +2182,10 @@ function carregarEstoque(){
             '<td><span style="background:#e8f4fd;color:#0f3460;padding:2px 8px;border-radius:10px;font-size:12px;font-weight:600">' + (e.nome_unidade||'--') + '</span></td>' +
             '<td><strong>'+e.nome_produto+'</strong></td>' +
             '<td><span style="font-size:12px;color:#888">'+e.tipo_item+'</span></td>' +
-            '<td><strong style="font-size:15px">'+e.quantidade+'</strong></td>' +
-            '<td style="color:#e67e22">'+R(e.custo_medio)+'</td>' +
-            '<td style="color:#27ae60;font-weight:600">'+R(e.preco_venda)+'</td>' +
-            '<td><span style="font-size:12px;color:#aaa">'+e.lotes_count+' lote(s)</span></td>' +
+            '<td><strong style="font-size:15px">'+(e.tipo_item==='decant' ? (e.quantidade+'ml') : e.quantidade)+'</strong></td>' +
+            '<td style="color:#e67e22">'+(e.tipo_item==='decant' ? '--' : R(e.custo_medio))+'</td>' +
+            '<td style="color:#27ae60;font-weight:600">'+(e.tipo_item==='decant' ? '--' : R(e.preco_venda))+'</td>' +
+            '<td><span style="font-size:12px;color:#aaa">'+(e.tipo_item==='decant' ? '&#x1F4A7; decant' : e.lotes_count+' lote(s)')+'</span></td>' +
           '</tr>';
         }).join('')+
         '</tbody></table>';
@@ -2214,9 +2208,7 @@ function carregarEstoque(){
     if(mEl) mEl.innerHTML = optsM;
     _estoqueCache = lista;
 
-    // Carregar lotes se visivel
-    var lEl = document.getElementById('tbl-lotes');
-    if(lEl && lEl.style.display !== 'none') _carregarLotes(filtroUn);
+
 
   }).withFailureHandler(function(e){ if(elRes) elRes.innerHTML='<div class="merr" style="padding:14px">Erro: '+e.message+'</div>'; })
   .fn_listarEstoque(S.token);
