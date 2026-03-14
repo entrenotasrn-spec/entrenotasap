@@ -400,6 +400,7 @@
       <div class="form-card" style="margin-top:18px">
         <h3>&#x21C4; Mover Estoque entre Locais</h3>
         <div class="form-grid">
+          <div class="form-group"><label>Unidade</label><select id="mv-unidade" onchange="atualizarLocaisOrigem()"><option value="">-- Selecione --</option></select></div>
           <div class="form-group"><label>Produto</label><select id="mv-prod" onchange="atualizarLocaisOrigem()"><option value="">Selecione...</option></select></div>
           <div class="form-group"><label>Tipo</label><select id="mv-tipo" onchange="atualizarLocaisOrigem()"><option value="normal">Frasco completo</option><option value="decant">Decant (ml)</option></select></div>
           <div class="form-group"><label>Origem</label><select id="mv-origem" onchange="atualizarMaxQtd()"><option value="">Selecione o produto primeiro</option></select></div>
@@ -2314,10 +2315,16 @@ var _locaisCache=[];
 function atualizarLocaisOrigem(){
   var id=document.getElementById('mv-prod').value;
   var tipo=document.getElementById('mv-tipo').value;
+  var idUnidade=(document.getElementById('mv-unidade')||{}).value||'';
   var sel=document.getElementById('mv-origem');
   if(!id){sel.innerHTML='<option value="">Selecione o produto primeiro</option>';return;}
-  var found=_estoqueCache.filter(function(e){return String(e.id_produto)===String(id)&&e.tipo_item===tipo&&Number(e.quantidade)>0;});
-  if(!found.length){sel.innerHTML='<option value="">Sem estoque neste tipo</option>';return;}
+  var found=_estoqueCache.filter(function(e){
+    return String(e.id_produto)===String(id) &&
+           e.tipo_item===tipo &&
+           Number(e.quantidade)>0 &&
+           (!idUnidade || String(e.id_unidade||'')===String(idUnidade));
+  });
+  if(!found.length){sel.innerHTML='<option value="">Sem estoque neste filtro</option>';return;}
   sel.innerHTML=found.map(function(e){return '<option value="'+e.local+'" data-qtd="'+e.quantidade+'" data-ml="'+(e.ml_disponivel||0)+'">'+e.local+' ('+e.quantidade+' un'+(tipo==='decant'?' / '+e.ml_disponivel+'ml':'')+')';}).join('');
   atualizarMaxQtd();
 }
@@ -2335,7 +2342,8 @@ function atualizarMaxQtd(){
   if(Number(inMl.value)>maxMl) inMl.value=maxMl;
 }
 function moverEstoque(re){
-  var d={id_produto:document.getElementById('mv-prod').value,tipo_item:document.getElementById('mv-tipo').value,local_origem:document.getElementById('mv-origem').value,local_destino:document.getElementById('mv-destino').value,quantidade:Number(document.getElementById('mv-qtd').value)||1,ml:Number(document.getElementById('mv-ml').value)||0};
+  var idUnidade=(document.getElementById('mv-unidade')||{}).value||'';
+  var d={id_produto:document.getElementById('mv-prod').value,tipo_item:document.getElementById('mv-tipo').value,local_origem:document.getElementById('mv-origem').value,local_destino:document.getElementById('mv-destino').value,quantidade:Number(document.getElementById('mv-qtd').value)||1,ml:Number(document.getElementById('mv-ml').value)||0,id_unidade:idUnidade};
   if(!d.id_produto){msg('msg-mover','Selecione o produto');if(re)re();return;}
   if(!d.local_origem){msg('msg-mover','Selecione a origem');if(re)re();return;}
   if(!d.local_destino){msg('msg-mover','Selecione o destino');if(re)re();return;}
@@ -2956,7 +2964,7 @@ function _preencherSelectsUnidade() {
   var optsUn = '<option value="">-- Selecione --</option>' + ativas.map(function(u) {
     return '<option value="' + u.id + '">' + u.nome + '</option>';
   }).join('');
-  ['atr-unidade','co-unidade','vd-unidade','tr-origem','tr-destino','perda-unidade'].forEach(function(id) {
+  ['atr-unidade','co-unidade','vd-unidade','tr-origem','tr-destino','perda-unidade','mv-unidade'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.innerHTML = optsUn;
   });
