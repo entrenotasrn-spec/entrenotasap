@@ -303,6 +303,7 @@
             <canvas id="foto-canvas" style="display:none"></canvas>
             <input type="hidden" id="p-foto-b64">
           </div>
+          <div class="form-group"><label>Apresentação</label><input id="p-apresentacao" placeholder="Ex: Frasco 100ml, Frasco 50ml..."></div>
           <div class="form-group col-full"><label>Descrição</label><textarea id="p-desc" placeholder="Descrição"></textarea></div>
         </div>
         <button class="btn bp" style="margin-top:14px" id="btn-criar-produto" onclick="btnGuard(this,function(re){criarProduto(re)})">+ Adicionar</button>
@@ -1606,20 +1607,20 @@ function criarProduto(re) {
   var url   = document.getElementById('p-foto-url').value.trim();
   var idFab = document.getElementById('p-fabricante') ? document.getElementById('p-fabricante').value : '';
   var idCat = document.getElementById('p-categoria')  ? document.getElementById('p-categoria').value  : '';
+  var apres = document.getElementById('p-apresentacao') ? document.getElementById('p-apresentacao').value.trim() : '';
   if (!nome || !preco) { msg('msg-produto','Preencha nome e preco'); if(re)re(); return; }
 
   if (_fotoB64) {
-    // Tem foto capturada -- enviar para o Drive primeiro
     msg('msg-produto','&#x23F3; Enviando foto...','');
     google.script.run
       .withSuccessHandler(function(r) {
         if (!r.ok) { msg('msg-produto','&#x274C; Erro no upload: '+r.mensagem); if(re)re(); return; }
-        _salvarProduto(nome, preco, desc, r.dados.url, re, idFab, idCat);
+        _salvarProduto(nome, preco, desc, r.dados.url, re, idFab, idCat, apres);
       })
       .withFailureHandler(function(e) { msg('msg-produto','&#x274C; Erro: '+e.message); if(re)re(); })
       .fn_salvarFotoBase64(S.token, _fotoB64, nome);
   } else {
-    _salvarProduto(nome, preco, desc, url, re, idFab, idCat);
+    _salvarProduto(nome, preco, desc, url, re, idFab, idCat, apres);
   }
 }
 
@@ -1637,7 +1638,7 @@ function _carregarSelectsProduto() {
   }).fn_listarCategorias(S.token);
 }
 
-function _salvarProduto(nome, preco, desc, fotoUrl, re, idFab, idCat) {
+function _salvarProduto(nome, preco, desc, fotoUrl, re, idFab, idCat, apres) {
   msg('msg-produto','&#x23F3; Salvando produto...','');
   google.script.run
     .withSuccessHandler(function(r) {
@@ -1646,12 +1647,13 @@ function _salvarProduto(nome, preco, desc, fotoUrl, re, idFab, idCat) {
       document.getElementById('p-nome').value  = '';
       document.getElementById('p-preco').value = '';
       document.getElementById('p-desc').value  = '';
+      var apEl = document.getElementById('p-apresentacao'); if(apEl) apEl.value = '';
       limparFoto();
       carregarProdutos();
       if(re)re();
     })
     .withFailureHandler(function(e) { msg('msg-produto','&#x274C; '+e.message); if(re)re(); })
-    .fn_criarProduto(S.token, { nome:nome, preco_venda:preco, descricao:desc, foto_url:fotoUrl||'', id_fabricante:idFab, id_categoria:idCat });
+    .fn_criarProduto(S.token, { nome:nome, preco_venda:preco, descricao:desc, foto_url:fotoUrl||'', id_fabricante:idFab, id_categoria:idCat, apresentacao:apres||'' });
 }
 
 function carregarProdutos(){
@@ -1939,6 +1941,7 @@ function abrirEditarProduto(id) {
           return '<option value="'+c.id+'"'+(c.id===p.id_categoria?' selected':'')+'>'+c.nome+'</option>';
         }).join('')+
       '</select></div>'+
+    '<div class="form-group"><label>Apresenta&#231;&#227;o</label><input id="edit-apresentacao" value="'+(p.apresentacao||'')+'" placeholder="Ex: Frasco 100ml, Frasco 50ml..." style="width:100%"></div>'+
     '<div style="display:flex;gap:10px;justify-content:flex-end">'+
       '<button class="btn" style="background:#eee;color:#555" onclick="fecharModalGenerico()">Cancelar</button>'+
       '<button class="btn bp" onclick="salvarEdicaoProduto()">&#x1F4BE; Salvar</button>'+
@@ -1983,12 +1986,14 @@ function salvarEdicaoProduto(){
   var url   = document.getElementById('edit-foto-url').value.trim();
   var idFab = document.getElementById('edit-fabricante') ? document.getElementById('edit-fabricante').value : undefined;
   var idCat = document.getElementById('edit-categoria') ? document.getElementById('edit-categoria').value : undefined;
+  var apres = document.getElementById('edit-apresentacao') ? document.getElementById('edit-apresentacao').value.trim() : undefined;
   function _doUpdate(fotoUrl){
     msg('msg-edit-prod','&#x23F3; Salvando...','');
     var campos = {nome:nome, preco_venda:preco, descricao:desc};
     if(fotoUrl!==undefined) campos.foto_url = fotoUrl;
     if(idFab!==undefined) campos.id_fabricante = idFab;
     if(idCat!==undefined) campos.id_categoria  = idCat;
+    if(apres!==undefined) campos.apresentacao  = apres;
     google.script.run
       .withSuccessHandler(function(r){
         if(!r.ok){msg('msg-edit-prod','&#x274C; '+r.mensagem);return;}
@@ -4545,8 +4550,9 @@ function _renderCatalogo(lista) {
     var frascoAtivo = p.frasco_ativo !== false;
     var btnFrasco = '';
     if (frascoAtivo) {
+      var labelFrasco = p.apresentacao ? p.apresentacao + ' -- ' + R(preco) : '&#x1F9F4; Frasco -- ' + R(preco);
       btnFrasco = logado
-        ? '<button class="btn-add-cart" onclick="addCart(\''+p.id+'\',\''+nomeEsc+'\','+preco+',\'normal\',0)" style="margin-bottom:6px">&#x1F6D2; Frasco -- '+R(preco)+'</button>'
+        ? '<button class="btn-add-cart" onclick="addCart(\''+p.id+'\',\''+nomeEsc+'\','+preco+',\'normal\',0)" style="margin-bottom:6px">&#x1F6D2; '+labelFrasco+'</button>'
         : '<button class="btn-add-cart" style="background:#888;margin-bottom:6px" onclick="abrirModalAuth(\'entrar\')">&#x1F511; Entre para pedir</button>';
     }
 
