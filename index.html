@@ -515,7 +515,8 @@
         <div class="form-grid">
           <div class="form-group"><label>Data</label><input id="co-data" type="date"></div>
           <div class="form-group"><label>Unidade</label><select id="co-unidade"><option value="">-- Selecione --</option></select></div>
-          <div class="form-group"><label>Desconto Geral (R$)</label><input id="co-desc" type="number" step="0.01" value="0"></div>
+          <div class="form-group"><label>Frete (R$)</label><input id="co-frete" type="number" step="0.01" value="0" oninput="calcTC()" title="Rateado proporcionalmente entre os itens"></div>
+          <div class="form-group"><label>Desconto Geral (R$)</label><input id="co-desc" type="number" step="0.01" value="0" oninput="calcTC()"></div>
           <div class="form-group"><label>Valor Pago (R$)</label><input id="co-pago" type="number" step="0.01" value="0"></div>
           <div class="form-group" style="grid-column:1/-1">
             <label>Fornecedor</label>
@@ -2365,13 +2366,29 @@ function addItemCompra(){
 
 function renderIC(){
   var opts=prods.map(function(p){return '<option value="'+p.id+'">'+p.nome+'</option>';}).join('');
-  document.getElementById('compra-itens').innerHTML=itensC.map(function(it,i){return(
+  var frete   = +(document.getElementById('co-frete')||{value:0}).value||0;
+  var subTotal= itensC.reduce(function(a,i){return a+(i.qtd*i.vl-i.desc);},0);
+
+  document.getElementById('compra-itens').innerHTML=itensC.map(function(it,i){
+    var freteItem = (frete > 0 && subTotal > 0)
+      ? Math.round((it.qtd*it.vl-it.desc)/subTotal*frete*100)/100
+      : 0;
+    var freteTag = freteItem > 0
+      ? '<span title="Frete rateado" style="font-size:11px;color:#e67e22;background:#fff3e0;border-radius:4px;padding:1px 5px;margin-left:2px">+'+R(freteItem)+'</span>'
+      : '';
+    var custoFinal = it.qtd*it.vl - it.desc + freteItem;
+    var custoTag = (it.qtd*it.vl > 0)
+      ? '<div style="font-size:11px;color:#888;text-align:right;margin-top:2px">Total: <strong>'+R(custoFinal)+'</strong>'+freteTag+'</div>'
+      : '';
+    return(
     '<div class="item-row" style="grid-template-columns:2fr 1fr 1fr 1fr auto">'+
     '<select onchange="itensC['+i+'].id=this.value"><option value="">Produto...</option>'+opts+'</select>'+
-    '<input type="number" value="'+it.qtd+'" placeholder="Qtd" min="1" onchange="itensC['+i+'].qtd=+this.value;calcTC()">'+
-    '<input type="number" value="'+it.vl+'" placeholder="R$ Unit" step="0.01" onchange="itensC['+i+'].vl=+this.value;calcTC()">'+
-    '<input type="number" value="'+it.desc+'" placeholder="Desc" step="0.01" onchange="itensC['+i+'].desc=+this.value;calcTC()">'+
-    '<button class="btn-rm" onclick="itensC.splice('+i+',1);renderIC()">&#x2715;</button></div>');}).join('');
+    '<input type="number" value="'+it.qtd+'" placeholder="Qtd" min="1" onchange="itensC['+i+'].qtd=+this.value;renderIC()">'+
+    '<input type="number" value="'+it.vl+'" placeholder="R$ Unit" step="0.01" onchange="itensC['+i+'].vl=+this.value;renderIC()">'+
+    '<div><input type="number" value="'+it.desc+'" placeholder="Desc" step="0.01" onchange="itensC['+i+'].desc=+this.value;renderIC()">'+custoTag+'</div>'+
+    '<button class="btn-rm" onclick="itensC.splice('+i+',1);renderIC()">&#x2715;</button></div>');
+  }).join('');
+
   // Restaurar produto selecionado em cada linha
   itensC.forEach(function(it, i) {
     var rows = document.getElementById('compra-itens').children;
@@ -2383,9 +2400,20 @@ function renderIC(){
 }
 
 function calcTC(){
-  var sub=itensC.reduce(function(a,i){return a+(i.qtd*i.vl-i.desc);},0);
-  var d=+(document.getElementById('co-desc').value)||0;
-  document.getElementById('co-total').textContent='Total: '+R(sub-d);
+  var sub    = itensC.reduce(function(a,i){return a+(i.qtd*i.vl-i.desc);},0);
+  var desc   = +(document.getElementById('co-desc').value)||0;
+  var frete  = +(document.getElementById('co-frete').value)||0;
+  var total  = sub - desc + frete;
+  var freteInfo = frete > 0
+    ? ' <span style="font-size:13px;color:#e67e22;font-weight:600">+ frete '+R(frete)+'</span>'
+    : '';
+  document.getElementById('co-total').innerHTML = 'Total: <strong>'+R(total)+'</strong>' + freteInfo;
+  // Re-renderizar itens para atualizar tags de frete rateado (sem loop infinito)
+  if (!calcTC._rendering) {
+    calcTC._rendering = true;
+    renderIC();
+    calcTC._rendering = false;
+  }
 }
 
 
@@ -2486,6 +2514,7 @@ function verDetalhesCompra(id, btn) {
           '<div><span style="color:#888">Status</span><br><strong style="color:'+statusCor+'">'+c.status_pagamento+'</strong></div>'+
           '<div><span style="color:#888">Pago</span><br><strong style="color:#27ae60">'+R(c.valor_pago)+'</strong></div>'+
           '<div><span style="color:#888">A pagar</span><br><strong style="color:#e74c3c">'+R(c.valor_a_pagar)+'</strong></div>'+
+          (c.frete>0 ? '<div><span style="color:#888">Frete</span><br><strong style="color:#e67e22">'+R(c.frete)+'</strong></div>' : '')+
         '</div>'+
         '<table style="width:100%;font-size:13px"><thead><tr style="background:#0F3460;color:#fff"><th style="padding:6px 8px;text-align:left">Produto</th><th style="padding:6px 8px">Qtd</th><th style="padding:6px 8px">Unit.</th><th style="padding:6px 8px">Total</th></tr></thead><tbody>'+itensHtml+'</tbody></table>';
     })
@@ -3388,13 +3417,50 @@ function registrarCompra(reabilitar){
   var txtForn = document.getElementById('co-fornecedor-txt');
   var idForn  = selForn ? selForn.value : '';
   var nmForn  = txtForn ? txtForn.value.trim() : '';
-  // texto digitado tem prioridade sobre select
-  var dados={data:document.getElementById('co-data').value||new Date().toISOString(),desconto_geral:document.getElementById('co-desc').value,valor_pago:document.getElementById('co-pago').value,
+  var frete   = +(document.getElementById('co-frete').value)||0;
+
+  // Ratear frete proporcionalmente ao valor total de cada item
+  var subTotal = itensC.reduce(function(a,i){return a+(i.qtd*i.vl-i.desc);},0);
+  var itensComFrete = itensC.map(function(i, idx){
+    var valorItem = i.qtd*i.vl - i.desc;
+    var freteItem = 0;
+    if (frete > 0 && subTotal > 0) {
+      // último item recebe o saldo para evitar centavos perdidos
+      if (idx === itensC.length - 1) {
+        var freteJaRateado = itensC.slice(0, idx).reduce(function(a, it){
+          return a + Math.round((it.qtd*it.vl - it.desc) / subTotal * frete * 100) / 100;
+        }, 0);
+        freteItem = Math.round((frete - freteJaRateado) * 100) / 100;
+      } else {
+        freteItem = Math.round(valorItem / subTotal * frete * 100) / 100;
+      }
+    }
+    return {id_produto:i.id, quantidade:i.qtd, valor_unitario:i.vl, desconto_item:i.desc, frete_rateado:freteItem, local:'Prateleira'};
+  });
+
+  var dados={
+    data: document.getElementById('co-data').value||new Date().toISOString(),
+    desconto_geral: document.getElementById('co-desc').value,
+    valor_pago: document.getElementById('co-pago').value,
+    frete: frete,
     id_fornecedor: nmForn ? '' : idForn,
     id_unidade: (document.getElementById('co-unidade')||{}).value || '',
     fornecedor_nome: nmForn,
-    itens:itensC.map(function(i){return{id_produto:i.id,quantidade:i.qtd,valor_unitario:i.vl,desconto_item:i.desc,local:'Prateleira'};})};
-  google.script.run.withSuccessHandler(function(r){if(!r.ok){msg('msg-compra',r.mensagem);return;}msg('msg-compra','Compra registrada!','ok');itensC=[];renderIC();carregarCompras();if(reabilitar)reabilitar();if(document.getElementById('co-fornecedor-sel'))document.getElementById('co-fornecedor-sel').value='';if(document.getElementById('co-fornecedor-txt'))document.getElementById('co-fornecedor-txt').value='';}).withFailureHandler(function(e){msg('msg-compra',e.message);if(reabilitar)reabilitar();}).fn_registrarCompra(S.token,dados);
+    itens: itensComFrete
+  };
+  google.script.run
+    .withSuccessHandler(function(r){
+      if(!r.ok){msg('msg-compra',r.mensagem);if(reabilitar)reabilitar();return;}
+      msg('msg-compra','Compra registrada!','ok');
+      itensC=[];renderIC();
+      document.getElementById('co-frete').value='0';
+      carregarCompras();
+      if(reabilitar)reabilitar();
+      if(document.getElementById('co-fornecedor-sel'))document.getElementById('co-fornecedor-sel').value='';
+      if(document.getElementById('co-fornecedor-txt'))document.getElementById('co-fornecedor-txt').value='';
+    })
+    .withFailureHandler(function(e){msg('msg-compra',e.message);if(reabilitar)reabilitar();})
+    .fn_registrarCompra(S.token,dados);
 }
 
 function pagarCompra(id,aP){
