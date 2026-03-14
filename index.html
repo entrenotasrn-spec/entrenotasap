@@ -4541,10 +4541,14 @@ function _renderCatalogo(lista) {
 
     var logado = !!S.token;
 
-    // Botao frasco cheio
-    var btnFrasco = logado
-      ? '<button class="btn-add-cart" onclick="addCart(\''+p.id+'\',\''+nomeEsc+'\','+preco+',\'normal\',0)" style="margin-bottom:6px">&#x1F6D2; Frasco -- '+R(preco)+'</button>'
-      : '<button class="btn-add-cart" style="background:#888;margin-bottom:6px" onclick="abrirModalAuth(\'entrar\')">&#x1F511; Entre para pedir</button>';
+    // Botao frasco cheio (so aparece se frasco_ativo !== false)
+    var frascoAtivo = p.frasco_ativo !== false;
+    var btnFrasco = '';
+    if (frascoAtivo) {
+      btnFrasco = logado
+        ? '<button class="btn-add-cart" onclick="addCart(\''+p.id+'\',\''+nomeEsc+'\','+preco+',\'normal\',0)" style="margin-bottom:6px">&#x1F6D2; Frasco -- '+R(preco)+'</button>'
+        : '<button class="btn-add-cart" style="background:#888;margin-bottom:6px" onclick="abrirModalAuth(\'entrar\')">&#x1F511; Entre para pedir</button>';
+    }
 
     // Botoes de decant
     var btnsDecant = '';
