@@ -4765,6 +4765,14 @@ function _renderCatalogo(lista) {
         (frascoAtivo ? '<div class="prod-preco">'+R(preco)+'</div>' : '')+
         btnFrasco+
         btnsDecant+
+        '<div style="display:flex;align-items:center;gap:10px;margin-top:10px;padding-top:8px;border-top:1px solid #f0f0f0">'+
+          '<button onclick="curtirCardUI(event,\''+p.id+'\',this)" style="display:flex;align-items:center;gap:4px;background:none;border:none;cursor:pointer;font-size:12px;color:#aaa;padding:3px 6px;border-radius:20px;transition:all 0.15s" title="Curtir">'+
+            '&#x2764;&#xFE0F; <span>'+(p.curtidas||0)+'</span>'+
+          '</button>'+
+          '<button onclick="compartilharCardUI(event,\''+p.id+'\',\''+nomeEsc+'\')" style="display:flex;align-items:center;gap:4px;background:none;border:none;cursor:pointer;font-size:12px;color:#aaa;padding:3px 6px;border-radius:20px;transition:all 0.15s" title="Compartilhar">'+
+            '&#x1F517; <span>'+(p.compartilhamentos||0)+'</span>'+
+          '</button>'+
+        '</div>'+
       '</div></div>';
   }).join('');
 }
@@ -4846,6 +4854,38 @@ function limparFiltrosCatalogo() {
   var g = document.getElementById('cat-filtro-genero'); if(g) g.value = '';
   var r = document.getElementById('cat-resultado'); if(r) r.textContent = '';
   _renderCatalogo(_todosProds);
+}
+
+function curtirCardUI(event, idProd, btn) {
+  event.stopPropagation();
+  if (btn.dataset.curtido) return;
+  btn.dataset.curtido = '1';
+  btn.style.color = '#e74c3c';
+  btn.style.background = '#fdecea';
+  google.script.run
+    .withSuccessHandler(function(r) {
+      if (r && r.ok) btn.querySelector('span').textContent = r.dados.curtidas;
+    })
+    .fn_curtirProduto(idProd);
+}
+
+function compartilharCardUI(event, idProd, nomeProd) {
+  event.stopPropagation();
+  var url = window.location.origin + window.location.pathname + '#produto=' + idProd;
+  if (navigator.share) {
+    navigator.share({ title: nomeProd, url: url }).catch(function(){});
+  } else {
+    try { navigator.clipboard.writeText(url); } catch(e) { prompt('Copie o link:', url); }
+  }
+  google.script.run
+    .withSuccessHandler(function(r) {
+      if (r && r.ok) {
+        // Atualizar contador no card
+        var cards = document.querySelectorAll('[data-prod-id="'+idProd+'"]');
+        // fallback: recarregar catálogo em background
+      }
+    })
+    .fn_compartilharProduto(idProd);
 }
 
 function addCart(id,nome,preco,tipo,ml){
