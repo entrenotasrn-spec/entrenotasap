@@ -3948,7 +3948,7 @@ function gerarPdfPedido(id){
       '<div style="text-align:right">'+
         '<div class="lbl">&#x1F4C5; Data / Hora</div>'+
         '<div class="val" style="font-size:14px">'+dataStr+' as '+horaStr+'</div>'+
-        '<div style="margin-top:6px;display:inline-block;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700;background:'+(p.status==='aguardando_confirmacao'?'#fff3cd;color:#856404':'p.status==="cancelado"?"#f8d7da;color:#721c24"')+';background:'+(p.status==='aguardando_confirmacao'?'#fff3cd':'#d1e7dd')+';color:'+(p.status==='aguardando_confirmacao'?'#856404':'#0f5132')+'">'+p.status.replace(/_/g,' ').toUpperCase()+'</div>'+
+        '<div style="margin-top:6px;display:inline-block;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700;background:'+(p.status==='aguardando_confirmacao'?'#fff3cd':p.status==='cancelado'?'#f8d7da':'#d1e7dd')+';color:'+(p.status==='aguardando_confirmacao'?'#856404':p.status==='cancelado'?'#721c24':'#0f5132')+'">'+p.status.replace(/_/g,' ').toUpperCase()+'</div>'+
       '</div>'+
     '</div>'+
 
