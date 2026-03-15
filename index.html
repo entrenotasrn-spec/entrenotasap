@@ -1308,7 +1308,7 @@ function tela(id) {
   document.getElementById('tela-'+id).classList.add('ativa');
   // Ocultar hamburguer no catalogo e detalhe (nao faz sentido ali), mostrar no dashboard
   var hb = document.querySelector('.hamburger');
-  if(hb) hb.style.display = (id === 'catalogo' || id === 'detalhe') ? 'none' : '';
+  if(hb) hb.style.display = (id === 'catalogo' || id === 'produto') ? 'none' : '';
 }
 
 // ================================================================
