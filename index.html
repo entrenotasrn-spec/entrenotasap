@@ -876,6 +876,16 @@
     </div>
     <div id="cat-tab-pedidos" style="display:none"><div id="cat-pedidos"><div class="loading-txt">⏳</div></div></div>
   </div>
+  <!-- Rodapé do catálogo -->
+  <footer id="cat-footer" style="background:var(--primary);color:rgba(255,255,255,0.9);padding:28px 22px 20px;margin-top:32px;text-align:center">
+    <div style="max-width:600px;margin:0 auto">
+      <div style="font-size:22px;margin-bottom:4px" id="cat-footer-logo">🌸</div>
+      <div style="font-weight:800;font-size:16px;margin-bottom:2px" id="cat-footer-nome">Perfumes & CIA</div>
+      <div style="font-size:12px;opacity:0.8;margin-bottom:16px" id="cat-footer-sub"></div>
+      <div id="cat-footer-infos" style="display:flex;flex-wrap:wrap;justify-content:center;gap:12px;font-size:13px;margin-bottom:16px"></div>
+      <div style="font-size:11px;opacity:0.5;margin-top:8px">© <span id="cat-footer-ano"></span> — Todos os direitos reservados</div>
+    </div>
+  </footer>
 </div>
 
 <!-- Modal Login/Cadastro do Catalogo -->
@@ -5072,6 +5082,31 @@ function _aplicarConfig(c) {
   // Subtítulo no catálogo
   var catSub = document.getElementById('cat-subtitulo');
   if(catSub) catSub.textContent = c.subtitulo || '';
+  // Rodapé
+  var ftNome = document.getElementById('cat-footer-nome');
+  var ftSub  = document.getElementById('cat-footer-sub');
+  var ftLogo = document.getElementById('cat-footer-logo');
+  var ftAno  = document.getElementById('cat-footer-ano');
+  var ftInfo = document.getElementById('cat-footer-infos');
+  if(ftNome) ftNome.textContent = nomeLoja;
+  if(ftSub)  ftSub.textContent  = c.subtitulo || '';
+  if(ftAno)  ftAno.textContent  = new Date().getFullYear();
+  if(ftLogo && c.logo_url && c.logo_url.trim()) {
+    var lg = c.logo_url.trim();
+    ftLogo.innerHTML = (lg.startsWith('http')||lg.startsWith('data:'))
+      ? '<img src="'+lg+'" style="height:40px;width:40px;object-fit:contain;border-radius:8px;margin-bottom:4px">'
+      : lg;
+  }
+  if(ftInfo) {
+    var infos = [];
+    if(c.endereco)  infos.push('📍 '+c.endereco);
+    if(c.whatsapp)  infos.push('<a href="https://wa.me/'+c.whatsapp.replace(/\D/g,'')+'" target="_blank" style="color:rgba(255,255,255,0.9);text-decoration:none">💬 '+c.whatsapp+'</a>');
+    if(c.telefone && c.telefone !== c.whatsapp) infos.push('📞 '+c.telefone);
+    if(c.email)     infos.push('<a href="mailto:'+c.email+'" style="color:rgba(255,255,255,0.9);text-decoration:none">✉️ '+c.email+'</a>');
+    if(c.instagram) infos.push('<a href="https://instagram.com/'+c.instagram.replace('@','')+'" target="_blank" style="color:rgba(255,255,255,0.9);text-decoration:none">📸 '+c.instagram+'</a>');
+    if(c.site)      infos.push('<a href="'+c.site+'" target="_blank" style="color:rgba(255,255,255,0.9);text-decoration:none">🌐 '+c.site+'</a>');
+    ftInfo.innerHTML = infos.map(function(i){ return '<span>'+i+'</span>'; }).join('');
+  }
   // Logo na navbar do catalogo
   var catLogo = document.getElementById('cat-logo');
   if(catLogo && c.logo_url && c.logo_url.trim()) {
