@@ -1875,8 +1875,8 @@ function gerarCatalogoPdf() {
     primary:'#0f3460', accent:'#533483', bg:'#fdf6f0', sidebar:'#1a1a2e', cardBorder:'#f5e6d8'
   };
 
-  // Cor de fundo da pagina — cinza escuro elegante
-  var pageBg    = '#2a2a2a';
+  // Cor de fundo da pagina — segue o tema
+  var pageBg    = T.bg;
   var pageBg2   = '#3a3a3a';
   var primary   = T.primary;
   var accent    = T.accent;
@@ -2009,11 +2009,11 @@ function gerarCatalogoPdf() {
         'display:flex;justify-content:space-between;align-items:center'+
       '}'+
 
-      // Grid de produtos — fundo escuro com padrao sutil
+      // Grid de produtos — fundo cinza elegante com padrao sutil
       '.prod-grid{'+
         'padding:12px 14px 20px;'+
-        'background:'+pageBg+' !important;'+
-        'background-image:radial-gradient(circle at 1px 1px, rgba(255,255,255,0.04) 1px, transparent 0) !important;'+
+        'background:#e8e8e8 !important;'+
+        'background-image:radial-gradient(circle at 1px 1px, rgba(0,0,0,0.06) 1px, transparent 0) !important;'+
         'background-size:24px 24px !important;'+
         '-webkit-print-color-adjust:exact;print-color-adjust:exact'+
       '}'+
@@ -2047,7 +2047,7 @@ function gerarCatalogoPdf() {
 
       '<tfoot class="ft"><tr><td>'+footerInner+'</td></tr></tfoot>'+
 
-      '<tbody><tr><td style="padding:0;background:'+pageBg+';-webkit-print-color-adjust:exact;print-color-adjust:exact">'+
+      '<tbody><tr><td style="padding:0;background:#e8e8e8;-webkit-print-color-adjust:exact;print-color-adjust:exact">'+
 
         // Titulo da secao
         '<div class="secao-titulo">'+
