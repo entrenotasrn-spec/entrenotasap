@@ -2169,6 +2169,8 @@ function carregarEstoque(){
   var elRes = document.getElementById('tbl-estoque');
   if(elRes) elRes.innerHTML='<div class="loading-txt">&#x23F3;</div>';
 
+  _garantirUnidadesEPreencher();
+
   // Preencher select de unidades no filtro
   if (_unidades.length) {
     var el = document.getElementById('est-filtro-unidade');
@@ -2451,6 +2453,7 @@ function _preencherFiltroUnidade(elId, incluirTodas) {
 }
 
 function carregarCompras(){
+  _garantirUnidadesEPreencher();
   _preencherFiltroUnidade('co-filtro-unidade');
   var _coFiltros = {};
   var _coUnEl = document.getElementById('co-filtro-unidade');
@@ -2972,6 +2975,23 @@ function _preencherSelectsUnidade() {
   });
 }
 
+function _garantirUnidadesEPreencher(callback) {
+  if (_unidades && _unidades.length > 0) {
+    _preencherSelectsUnidade();
+    if (callback) callback();
+  } else {
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r && r.ok) {
+          _unidades = r.dados || [];
+          _preencherSelectsUnidade();
+        }
+        if (callback) callback();
+      })
+      .fn_listarUnidades(S.token);
+  }
+}
+
 function criarUnidadeUI(re) {
   var nome = document.getElementById('un-nome').value.trim();
   var end  = document.getElementById('un-end').value.trim();
@@ -3106,6 +3126,7 @@ function solicitarTransfUI(re) {
 }
 
 function carregarPedidosTransf() {
+  _garantirUnidadesEPreencher();
   var el = document.getElementById('tbl-pedidos-transf');
   if (el) el.innerHTML = '<div class="loading-txt">&#x23F3;</div>';
   var filtro = { status: (document.getElementById('tr-filtro-status')||{}).value || '' };
@@ -3589,6 +3610,7 @@ function calcTV(){
 }
 
 function carregarVendas(){
+  _garantirUnidadesEPreencher();
   _preencherFiltroUnidade('vd-filtro-unidade');
   var _vdFiltros = {};
   var _vdUnEl = document.getElementById('vd-filtro-unidade');
@@ -4047,6 +4069,7 @@ function cancelarPed(id){if(!confirm('Cancelar pedido?'))return;google.script.ru
 // ================================================================
 function carregarDecants(){
   preProds();
+  _garantirUnidadesEPreencher();
   document.getElementById('tbl-decants').innerHTML='<div class="loading-txt">&#x23F3;</div>';
   google.script.run.withSuccessHandler(function(r){
     if(!r.ok) return;
@@ -4446,6 +4469,7 @@ function _renderRankings(vendas, produtosPublicos) {
 // FINANCEIRO
 // ================================================================
 function carregarFinanceiro(){
+  _garantirUnidadesEPreencher();
   document.getElementById('fin-content').innerHTML='<div class="loading-txt">&#x23F3; Carregando relatorio financeiro...</div>';
 
   var ctrlHtml=
