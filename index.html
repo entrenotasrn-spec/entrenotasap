@@ -327,7 +327,16 @@
               <option value="Unissex">Unissex</option>
             </select>
           </div>
-          <div class="form-group col-full">
+          <!-- PROMOÇÃO -->
+          <div class="form-group">
+            <label>Status Promoção</label>
+            <select id="p-status-promo">
+              <option value="">Sem promoção</option>
+              <option value="ativo">🔥 Ativo</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Preço Antigo (R$)</label><input id="p-preco-antigo" type="number" step="0.01" placeholder="Ex: 199,90"></div>
+          <div class="form-group col-full"><label>Texto da Promoção</label><input id="p-promocao" placeholder="Ex: OFERTA ESPECIAL! Só hoje!"></div>
             <label>Foto do Produto</label>
             <div id="foto-area" style="display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap">
               <!-- Preview -->
@@ -1741,6 +1750,9 @@ function criarProduto(re) {
   var apres = document.getElementById('p-apresentacao') ? document.getElementById('p-apresentacao').value.trim() : '';
   var orig  = document.getElementById('p-origem') ? document.getElementById('p-origem').value : '';
   var gen   = document.getElementById('p-genero') ? document.getElementById('p-genero').value : '';
+  var promo       = (document.getElementById('p-promocao')||{}).value||'';
+  var precoAntigo = (document.getElementById('p-preco-antigo')||{}).value||'';
+  var statusPromo = (document.getElementById('p-status-promo')||{}).value||'';
   if (!nome || !preco) { msg('msg-produto','Preencha nome e preco'); if(re)re(); return; }
 
   if (_fotoB64) {
@@ -1748,12 +1760,12 @@ function criarProduto(re) {
     google.script.run
       .withSuccessHandler(function(r) {
         if (!r.ok) { msg('msg-produto','&#x274C; Erro no upload: '+r.mensagem); if(re)re(); return; }
-        _salvarProduto(nome, preco, desc, r.dados.url, re, idFab, idCat, apres, orig, gen);
+        _salvarProduto(nome, preco, desc, r.dados.url, re, idFab, idCat, apres, orig, gen, promo, precoAntigo, statusPromo);
       })
       .withFailureHandler(function(e) { msg('msg-produto','&#x274C; Erro: '+e.message); if(re)re(); })
       .fn_salvarFotoBase64(S.token, _fotoB64, nome);
   } else {
-    _salvarProduto(nome, preco, desc, url, re, idFab, idCat, apres, orig, gen);
+    _salvarProduto(nome, preco, desc, url, re, idFab, idCat, apres, orig, gen, promo, precoAntigo, statusPromo);
   }
 }
 
@@ -1771,7 +1783,7 @@ function _carregarSelectsProduto() {
   }).fn_listarCategorias(S.token);
 }
 
-function _salvarProduto(nome, preco, desc, fotoUrl, re, idFab, idCat, apres, orig, gen) {
+function _salvarProduto(nome, preco, desc, fotoUrl, re, idFab, idCat, apres, orig, gen, promo, precoAntigo, statusPromo) {
   msg('msg-produto','&#x23F3; Salvando produto...','');
   google.script.run
     .withSuccessHandler(function(r) {
@@ -1783,12 +1795,15 @@ function _salvarProduto(nome, preco, desc, fotoUrl, re, idFab, idCat, apres, ori
       var apEl = document.getElementById('p-apresentacao'); if(apEl) apEl.value = '';
       var orEl = document.getElementById('p-origem'); if(orEl) orEl.value = '';
       var geEl = document.getElementById('p-genero'); if(geEl) geEl.value = '';
+      var prEl = document.getElementById('p-promocao'); if(prEl) prEl.value = '';
+      var paEl = document.getElementById('p-preco-antigo'); if(paEl) paEl.value = '';
+      var spEl = document.getElementById('p-status-promo'); if(spEl) spEl.value = '';
       limparFoto();
       carregarProdutos();
       if(re)re();
     })
     .withFailureHandler(function(e) { msg('msg-produto','&#x274C; '+e.message); if(re)re(); })
-    .fn_criarProduto(S.token, { nome:nome, preco_venda:preco, descricao:desc, foto_url:fotoUrl||'', id_fabricante:idFab, id_categoria:idCat, apresentacao:apres||'', origem:orig||'', genero:gen||'' });
+    .fn_criarProduto(S.token, { nome:nome, preco_venda:preco, descricao:desc, foto_url:fotoUrl||'', id_fabricante:idFab, id_categoria:idCat, apresentacao:apres||'', origem:orig||'', genero:gen||'', promocao:promo||'', preco_antigo:precoAntigo||'', status_promocao:statusPromo||'' });
 }
 
 function carregarProdutos(){
@@ -2092,6 +2107,14 @@ function abrirEditarProduto(id) {
           return '<option value="'+g+'"'+(g===(p.genero||'')?' selected':'')+'>'+g+'</option>';
         }).join('')+
       '</select></div>'+
+    '<div style="border-top:1px solid #eee;margin:12px 0;padding-top:12px"><strong>🔥 Promoção (apenas visual)</strong></div>'+
+    '<div class="form-group"><label>Status Promoção</label>'+
+      '<select id="edit-status-promo" style="width:100%">'+
+        '<option value=""'+(!(p.status_promocao==='ativo')?' selected':'')+'>Sem promoção</option>'+
+        '<option value="ativo"'+(p.status_promocao==='ativo'?' selected':'')+'>🔥 Ativo</option>'+
+      '</select></div>'+
+    '<div class="form-group"><label>Preço Antigo (R$)</label><input id="edit-preco-antigo" type="number" step="0.01" value="'+(p.preco_antigo||'')+'" placeholder="Ex: 199,90" style="width:100%"></div>'+
+    '<div class="form-group"><label>Texto da Promoção</label><input id="edit-promocao" value="'+(p.promocao||'')+'" placeholder="Ex: OFERTA ESPECIAL! Só hoje!" style="width:100%"></div>'+
     '<div style="display:flex;gap:10px;justify-content:flex-end">'+
       '<button class="btn" style="background:#eee;color:#555" onclick="fecharModalGenerico()">Cancelar</button>'+
       '<button class="btn bp" onclick="salvarEdicaoProduto()">&#x1F4BE; Salvar</button>'+
@@ -2139,6 +2162,9 @@ function salvarEdicaoProduto(){
   var apres = document.getElementById('edit-apresentacao') ? document.getElementById('edit-apresentacao').value.trim() : undefined;
   var orig  = document.getElementById('edit-origem') ? document.getElementById('edit-origem').value : undefined;
   var gen   = document.getElementById('edit-genero') ? document.getElementById('edit-genero').value : undefined;
+  var promo       = (document.getElementById('edit-promocao')||{}).value;
+  var precoAntigo = (document.getElementById('edit-preco-antigo')||{}).value;
+  var statusPromo = (document.getElementById('edit-status-promo')||{}).value;
   function _doUpdate(fotoUrl){
     msg('msg-edit-prod','&#x23F3; Salvando...','');
     var campos = {nome:nome, preco_venda:preco, descricao:desc};
@@ -2148,6 +2174,9 @@ function salvarEdicaoProduto(){
     if(apres!==undefined) campos.apresentacao  = apres;
     if(orig!==undefined)  campos.origem        = orig;
     if(gen!==undefined)   campos.genero        = gen;
+    if(promo!==undefined)       campos.promocao        = promo;
+    if(precoAntigo!==undefined) campos.preco_antigo    = precoAntigo;
+    if(statusPromo!==undefined) campos.status_promocao = statusPromo;
     google.script.run
       .withSuccessHandler(function(r){
         if(!r.ok){msg('msg-edit-prod','&#x274C; '+r.mensagem);return;}
@@ -5096,13 +5125,28 @@ function _renderCatalogo(lista) {
     if (p.origem)  tagsHtml += '<span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;background:#e8f5e9;color:#2e7d32;margin-right:4px;margin-bottom:4px">&#x1F30D; '+p.origem+'</span>';
     if (p.genero)  tagsHtml += '<span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;background:#fce4ec;color:#c2185b;margin-right:4px;margin-bottom:4px">&#x1F464; '+p.genero+'</span>';
 
+    var precoHtml;
+    if (frascoAtivo) {
+      if (p.status_promocao === 'ativo' && p.preco_antigo) {
+        precoHtml = '<div style="margin-bottom:4px">' +
+          (p.promocao ? '<div style="font-size:11px;font-weight:700;color:#e53935;background:#fff3e0;padding:2px 8px;border-radius:12px;display:inline-block;margin-bottom:4px">🔥 '+p.promocao+'</div>' : '') +
+          '<div style="font-size:13px;color:#aaa;text-decoration:line-through">De '+R(+p.preco_antigo)+'</div>'+
+          '<div class="prod-preco" style="color:#e53935">Por apenas '+R(preco)+'</div>'+
+          '</div>';
+      } else {
+        precoHtml = '<div class="prod-preco">'+R(preco)+'</div>';
+      }
+    } else {
+      precoHtml = '';
+    }
+
     return '<div class="prod-card">'+
       '<div class="prod-img" onclick="abrirDetalheProduto(\''+p.id+'\')" style="cursor:pointer">'+foto+'</div>'+
       '<div class="prod-body">'+
         (tagsHtml ? '<div class="prod-tags">'+tagsHtml+'</div>' : '')+
         '<div class="prod-nome" onclick="abrirDetalheProduto(\''+p.id+'\')" style="cursor:pointer">'+p.nome+'</div>'+
         '<div class="prod-desc">'+(p.descricao||'')+'</div>'+
-        (frascoAtivo ? '<div class="prod-preco">'+R(preco)+'</div>' : '')+
+        precoHtml+
         btnFrasco+
         btnsDecant+
         '<div style="display:flex;align-items:center;gap:10px;margin-top:10px;padding-top:8px;border-top:1px solid #f0f0f0">'+
@@ -5358,7 +5402,14 @@ function _renderDetalheProduto(p) {
   // Preço
   var prEl = document.getElementById('det-preco');
   if (p.frasco_ativo !== false) {
-    prEl.textContent = R(p.preco_venda);
+    if (p.status_promocao === 'ativo' && p.preco_antigo) {
+      prEl.innerHTML =
+        (p.promocao ? '<div style="font-size:13px;font-weight:700;color:#e53935;background:#fff3e0;padding:3px 12px;border-radius:14px;display:inline-block;margin-bottom:6px">🔥 '+p.promocao+'</div><br>' : '') +
+        '<span style="font-size:16px;color:#aaa;text-decoration:line-through;font-weight:400">De '+R(+p.preco_antigo)+'</span><br>' +
+        '<span style="color:#e53935">Por apenas '+R(p.preco_venda)+'</span>';
+    } else {
+      prEl.textContent = R(p.preco_venda);
+    }
     prEl.style.display = 'block';
   } else {
     prEl.style.display = 'none';
