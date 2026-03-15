@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Entre Notas - Alta Perfumaria</title>
+  <title>ERP Perfumes</title>
   <style>
     /* ===== VARIÁVEIS DE TEMA ===== */
     :root {
@@ -1322,6 +1322,13 @@ function loginTab(tab) {
   document.getElementById('frm-entrar').classList.toggle('hidden', tab!=='entrar');
   document.getElementById('frm-cadastro').classList.toggle('hidden', tab!=='cadastro');
   var a = document.getElementById('login-alerta'); a.className='alerta'; a.textContent='';
+}
+
+function authTab(tab) {
+  document.getElementById('auth-tab-entrar').classList.toggle('active', tab==='entrar');
+  document.getElementById('auth-tab-cadastro').classList.toggle('active', tab==='cadastro');
+  document.getElementById('auth-frm-entrar').classList.toggle('hidden', tab!=='entrar');
+  document.getElementById('auth-frm-cadastro').classList.toggle('hidden', tab!=='cadastro');
 }
 
 function setAlerta(msg, tipo) {
