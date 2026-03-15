@@ -806,7 +806,10 @@
   <nav class="cat-nav">
     <div style="display:flex;align-items:center;gap:10px;min-width:0">
       <div id="cat-logo" style="flex-shrink:0;height:36px;display:flex;align-items:center;font-size:28px">🌸</div>
-      <h1 class="app-nome-loja" style="font-size:17px;font-weight:800;letter-spacing:0.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">ERP Perfumes</h1>
+      <div style="min-width:0">
+        <h1 class="app-nome-loja" style="font-size:17px;font-weight:800;letter-spacing:0.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0">ERP Perfumes</h1>
+        <div id="cat-subtitulo" style="font-size:11px;opacity:0.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px"></div>
+      </div>
     </div>
     <div class="cat-nav-r">
       <span id="cat-nome" style="font-size:13px;opacity:0.85;margin-right:4px"></span>
@@ -5066,6 +5069,9 @@ function _aplicarConfig(c) {
   document.querySelectorAll('.app-nome-loja').forEach(function(el){ el.textContent = nomeLoja; });
   var catH1 = document.querySelector('.cat-nav h1');
   if(catH1) catH1.textContent = nomeLoja;
+  // Subtítulo no catálogo
+  var catSub = document.getElementById('cat-subtitulo');
+  if(catSub) catSub.textContent = c.subtitulo || '';
   // Logo na navbar do catalogo
   var catLogo = document.getElementById('cat-logo');
   if(catLogo && c.logo_url && c.logo_url.trim()) {
