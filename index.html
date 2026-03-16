@@ -4168,7 +4168,7 @@ function carregarDecants(){
     if(selPrecoProd) selPrecoProd.innerHTML='<option value="">Selecione...</option>'+prods.map(function(p){return '<option value="'+p.id+'">'+p.nome+'</option>';}).join('');
     if(!r.dados.length){document.getElementById('tbl-decants').innerHTML='<div class="empty-txt">Nenhum decant aberto</div>';carregarPrecosDecant();return;}
     document.getElementById('tbl-decants').innerHTML=
-      '<table><thead><tr><th>Produto</th><th>Local</th><th>ML Disponivel</th><th>Precos Cadastrados</th><th>Acao</th></tr></thead><tbody>'+
+      '<table><thead><tr><th>Produto</th><th>Local</th><th>ML Disponivel</th><th>Precos Cadastrados</th></tr></thead><tbody>'+
       r.dados.map(function(d){
         var precosStr = d.precos && d.precos.length
           ? d.precos.map(function(p){return '<span class="bdg bb">'+p.ml+'ml '+R(p.preco)+'</span>';}).join(' ')
@@ -4176,7 +4176,7 @@ function carregarDecants(){
         return '<tr><td>'+d.nome_produto+'</td><td>'+d.local+'</td>'+
           '<td><strong>'+d.ml_disponivel+' ml</strong></td>'+
           '<td>'+precosStr+'</td>'+
-          '<td><button class="btn bs btn-sm" onclick="venderDecUI(\''+d.id_produto+'\',\''+d.local+'\','+d.ml_disponivel+')">Vender ml</button></td></tr>';
+          '</tr>';
       }).join('')+'</tbody></table>';
     // Carregar precos
     carregarPrecosDecant();
