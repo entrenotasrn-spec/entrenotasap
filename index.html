@@ -5758,7 +5758,7 @@ function curtirProdutoUI() {
 function compartilharProdutoUI() {
   if (!_detProdAtual) return;
   var p    = _detProdAtual;
-  var url  = 'https://script.google.com/macros/s/AKfycbyMq9OkOu9dXDu9r-2un-f1ePswQsrN66nG_LGmqeJU79P2DTyBRwBdI6TVbPFHHa1qPw/exec?p=' + p.id;
+  var url  = window.location.origin + window.location.pathname + '#produto=' + p.id;
   var nomeLoja = (_appConfig && _appConfig.nome_loja) ? _appConfig.nome_loja : 'Perfumes & CIA';
   var titulo   = p.nome + ' — ' + nomeLoja;
   var texto    = (p.descricao ? p.descricao + '\n' : '') + R(p.preco_venda) + '\n' + url;
