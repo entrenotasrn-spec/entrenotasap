@@ -1528,13 +1528,16 @@ function msg(id,txt,tp){
 }
 
 function preProds(){
-  if(prods.length) return;
-  google.script.run.withSuccessHandler(function(r){
-    if(r.ok) prods=r.dados;
-  }).withFailureHandler(function(){}).fn_listarProdutos(S.token,true);
-  google.script.run.withSuccessHandler(function(r){
-    if(r.ok) precosDecant=r.dados;
-  }).withFailureHandler(function(){}).fn_listarPrecosDecant(S.token, null);
+  if(!prods.length) {
+    google.script.run.withSuccessHandler(function(r){
+      if(r.ok) prods=r.dados;
+    }).withFailureHandler(function(){}).fn_listarProdutos(S.token,true);
+  }
+  if(!precosDecant.length) {
+    google.script.run.withSuccessHandler(function(r){
+      if(r.ok) precosDecant=r.dados;
+    }).withFailureHandler(function(){}).fn_listarPrecosDecant(S.token, null);
+  }
 }
 
 // ================================================================
