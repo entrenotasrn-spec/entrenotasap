@@ -294,7 +294,15 @@
   <div class="conteudo">
     <!-- HOME -->
     <div id="pg-home" class="pagina ativa">
-      <p class="page-title">Dashboard</p>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:22px">
+        <p class="page-title" style="margin:0">Dashboard</p>
+        <div id="dash-filtro-wrap" style="display:none;align-items:center;gap:8px">
+          <label style="font-size:12px;font-weight:700;color:#888">Unidade:</label>
+          <select id="dash-filtro-unidade" onchange="carregarHome()" style="padding:7px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;background:white">
+            <option value="">Todas as unidades</option>
+          </select>
+        </div>
+      </div>
       <div id="home-content"><div class="loading-txt">⏳ Carregando...</div></div>
     </div>
     <!-- PRODUTOS -->
@@ -1545,6 +1553,25 @@ function preProds(){
 // ================================================================
 function carregarHome(){
   document.getElementById('home-content').innerHTML='<div class="loading-txt">&#x23F3; Carregando dashboard...</div>';
+
+  // Mostrar/popular filtro de unidade só para admin
+  var filtroWrap = document.getElementById('dash-filtro-wrap');
+  if(S.tipo === 'admin') {
+    if(filtroWrap) filtroWrap.style.display = 'flex';
+    var selUn = document.getElementById('dash-filtro-unidade');
+    if(selUn && selUn.options.length <= 1 && _unidades && _unidades.length) {
+      _unidades.filter(function(u){return u.ativa;}).forEach(function(u){
+        var o = document.createElement('option');
+        o.value = u.id; o.textContent = u.nome;
+        selUn.appendChild(o);
+      });
+    }
+  } else {
+    if(filtroWrap) filtroWrap.style.display = 'none';
+  }
+
+  var idUnidadeFiltro = (document.getElementById('dash-filtro-unidade')||{}).value || '';
+
   if(S.tipo==='admin'){
     google.script.run
       .withSuccessHandler(function(r){
@@ -1666,7 +1693,7 @@ function carregarHome(){
         _verificarAlertaVencimentos();
       })
       .withFailureHandler(function(e){document.getElementById('home-content').innerHTML='<div class="merr" style="padding:20px">&#x274C; Erro: '+e.message+'</div>';})
-      .fn_obterDashboardAdmin(S.token);
+      .fn_obterDashboardAdmin(S.token, idUnidadeFiltro || null);
   } else {
     google.script.run
       .withSuccessHandler(function(r){
