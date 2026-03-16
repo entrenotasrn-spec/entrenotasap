@@ -4,6 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ERP Perfumes</title>
+  <!-- Open Graph — atualizadas dinamicamente via JS ao abrir produto -->
+  <meta id="og-title"       property="og:title"       content="ERP Perfumes">
+  <meta id="og-description" property="og:description" content="Catálogo de produtos">
+  <meta id="og-image"       property="og:image"       content="">
+  <meta id="og-url"         property="og:url"         content="">
+  <meta id="og-type"        property="og:type"        content="product">
+  <meta id="tw-card"        name="twitter:card"        content="summary_large_image">
+  <meta id="tw-title"       name="twitter:title"       content="ERP Perfumes">
+  <meta id="tw-description" name="twitter:description" content="Catálogo de produtos">
+  <meta id="tw-image"       name="twitter:image"       content="">
   <style>
     /* ===== VARIÁVEIS DE TEMA ===== */
     :root {
@@ -5484,6 +5494,11 @@ function _renderDetalheProduto(p) {
   // Atualizar URL para compartilhamento (hash)
   try { history.replaceState(null, '', '#produto=' + p.id); } catch(e) {}
 
+  // Atualizar meta tags para preview ao compartilhar
+  var urlProd = window.location.origin + window.location.pathname + '#produto=' + p.id;
+  var nomeLoja = (_appConfig && _appConfig.nome_loja) ? _appConfig.nome_loja : 'Perfumes & CIA';
+  _atualizarMetaOG(p.nome + ' — ' + nomeLoja, p.descricao || nomeLoja, p.foto_url || '', urlProd);
+
   // Nome
   document.getElementById('det-nome-nav').textContent = p.nome;
   document.getElementById('det-nome').textContent = p.nome;
@@ -5742,16 +5757,20 @@ function curtirProdutoUI() {
 
 function compartilharProdutoUI() {
   if (!_detProdAtual) return;
-  var url = window.location.origin + window.location.pathname + '#produto=' + _detProdAtual.id;
-  // Tentar usar Web Share API (mobile)
+  var p    = _detProdAtual;
+  var url  = window.location.origin + window.location.pathname + '#produto=' + p.id;
+  var nomeLoja = (_appConfig && _appConfig.nome_loja) ? _appConfig.nome_loja : 'Perfumes & CIA';
+  var titulo   = p.nome + ' — ' + nomeLoja;
+  var texto    = (p.descricao ? p.descricao + '\n' : '') + R(p.preco_venda) + '\n' + url;
+
+  // Atualizar meta tags OG dinamicamente para preview do link
+  _atualizarMetaOG(titulo, p.descricao || nomeLoja, p.foto_url || '', url);
+
   if (navigator.share) {
-    navigator.share({ title: _detProdAtual.nome, text: _detProdAtual.descricao || '', url: url })
-      .then(function() {
-        _registrarCompartilhamento();
-      })
+    navigator.share({ title: titulo, text: texto, url: url })
+      .then(function() { _registrarCompartilhamento(); })
       .catch(function() {});
   } else {
-    // Fallback: copiar link
     try {
       navigator.clipboard.writeText(url).then(function() {
         document.getElementById('det-msg').textContent = '✅ Link copiado!';
@@ -5762,6 +5781,19 @@ function compartilharProdutoUI() {
     }
     _registrarCompartilhamento();
   }
+}
+
+function _atualizarMetaOG(titulo, descricao, imagem, url) {
+  function setMeta(id, val) { var el = document.getElementById(id); if(el) el.setAttribute('content', val); }
+  var nomeLoja = (_appConfig && _appConfig.nome_loja) ? _appConfig.nome_loja : 'ERP Perfumes';
+  document.title = titulo || nomeLoja;
+  setMeta('og-title',       titulo || nomeLoja);
+  setMeta('og-description', descricao || '');
+  setMeta('og-image',       imagem || '');
+  setMeta('og-url',         url || window.location.href);
+  setMeta('tw-title',       titulo || nomeLoja);
+  setMeta('tw-description', descricao || '');
+  setMeta('tw-image',       imagem || '');
 }
 
 function _registrarCompartilhamento() {
