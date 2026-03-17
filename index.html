@@ -343,7 +343,7 @@
               <option value="">Não informado</option>
               <option value="Masculino">Masculino</option>
               <option value="Feminino">Feminino</option>
-              <option value="Unissex">Unissex</option>
+              <option value="Compartilhavel">Compartilhavel</option>
             </select>
           </div>
           <!-- PROMOÇÃO -->
@@ -885,7 +885,7 @@
           <option value="">&#x1F464; Todos os gêneros</option>
           <option value="Masculino">Masculino</option>
           <option value="Feminino">Feminino</option>
-          <option value="Unissex">Unissex</option>
+          <option value="Compartilhavel">Compartilhavel</option>
         </select>
         <button onclick="limparFiltrosCatalogo()"
           style="padding:9px 14px;border:1.5px solid #ddd;border-radius:20px;font-size:13px;background:white;cursor:pointer;color:#888;white-space:nowrap">
@@ -2185,7 +2185,7 @@ function abrirEditarProduto(id) {
     '<div class="form-group"><label>G&#234;nero</label>'+
       '<select id="edit-genero" style="width:100%">'+
         '<option value="">N&#227;o informado</option>'+
-        ['Masculino','Feminino','Unissex'].map(function(g){
+        ['Masculino','Feminino','Compartilhavel'].map(function(g){
           return '<option value="'+g+'"'+(g===(p.genero||'')?' selected':'')+'>'+g+'</option>';
         }).join('')+
       '</select></div>'+
