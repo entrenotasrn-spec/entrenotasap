@@ -873,7 +873,7 @@
         <select id="cat-filtro-origem" onchange="filtrarCatalogo()"
           style="padding:9px 14px;border:1.5px solid #ddd;border-radius:20px;font-size:14px;background:white;cursor:pointer;min-width:130px">
           <option value="">&#x1F30D; Todas as origens</option>
-          <option value="Nacional">Nacional</option>
+          <option value=""></option>
           <option value="Importado">Importado</option>
           <option value="Árabe">Árabe</option>
           <option value="Francês">Francês</option>
@@ -2178,7 +2178,7 @@ function abrirEditarProduto(id) {
     '<div class="form-group"><label>Origem</label>'+
       '<select id="edit-origem" style="width:100%">'+
         '<option value="">N&#227;o informado</option>'+
-        ['Nacional','Importado','&#xC1;rabe','Europeu','Americano'].map(function(o){
+        ['Nacional','Importado','&#xC1;rabe','Franc&#xEA;s','Europeu','Americano'].map(function(o){
           return '<option value="'+o+'"'+(o===(p.origem||'')?' selected':'')+'>'+o+'</option>';
         }).join('')+
       '</select></div>'+
