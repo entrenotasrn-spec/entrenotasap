@@ -1899,7 +1899,11 @@ function carregarProdutos(){
 var _editProdId = '';
 
 function gerarCatalogoPdf() {
-  var lista = prods.filter(function(p){ return p.ativo; });
+  var lista = prods.filter(function(p){
+    if(p.ativo) return true;
+    // Incluir produto inativo se tiver decant ativo cadastrado
+    return precosDecant.some(function(d){ return d.id_produto === p.id && d.ativo; });
+  });
   if (!lista.length) { alert('Nenhum produto ativo para gerar o catalogo.'); return; }
 
   var cfg       = _appConfig || {};
